@@ -18,16 +18,6 @@ class QueryBuilder {
     return this;
   }
 
-  selectOne(columns = "*", table) {
-    if (Array.isArray(columns)) {
-      this.query = `SELECT ${columns.join(", ")} from ${table}`;
-    } else {
-      this.query = `SELECT ${columns} from ${table}`;
-    }
-    this.query += " LIMIT 1";
-    return this;
-  }
-
   // FROM table
   from(table) {
     this.query += ` FROM ${table}`;
@@ -38,8 +28,8 @@ class QueryBuilder {
   where(
     columnOrConditions,
     operator = "=",
-    valueOrLogic = null,
-    fullTextSearch = false
+    valueOrLogic = null
+    // fullTextSearch = false
   ) {
     // Handle array of conditions
     if (Array.isArray(columnOrConditions)) {
@@ -136,6 +126,103 @@ class QueryBuilder {
     return this;
   }
 
+  // WHERE IN - for multiple values
+  // Usage: whereIn("status", ["active", "pending", "completed"])
+  whereIn(column, values) {
+    if (!Array.isArray(values) || values.length === 0) {
+      throw new Error("Values for whereIn must be a non-empty array");
+    }
+
+    const placeholders = values.map(() => "?").join(", ");
+
+    if (this.query.includes("WHERE")) {
+      this.query += ` AND ${column} IN (${placeholders})`;
+    } else {
+      this.query += ` WHERE ${column} IN (${placeholders})`;
+    }
+
+    this.params.push(...values);
+    return this;
+  }
+
+  // WHERE NOT IN
+  //useCase: whereNotIn("status", ["inactive", "banned"])
+  whereNotIn(column, values) {
+    if (!Array.isArray(values) || values.length === 0) {
+      throw new Error("Values for whereNotIn must be a non-empty array");
+    }
+
+    const placeholders = values.map(() => "?").join(", ");
+
+    if (this.query.includes("WHERE")) {
+      this.query += ` AND ${column} NOT IN (${placeholders})`;
+    } else {
+      this.query += ` WHERE ${column} NOT IN (${placeholders})`;
+    }
+
+    this.params.push(...values);
+    return this;
+  }
+
+  // WHERE BETWEEN
+  // Usage: whereBetween("age", 18, 65)
+  whereBetween(column, min, max) {
+    if (min === undefined || max === undefined) {
+      throw new Error("Both min and max values are required for whereBetween");
+    }
+    if (this.query.includes("WHERE")) {
+      this.query += ` AND ${column} BETWEEN ? AND ?`;
+    } else {
+      this.query += ` WHERE ${column} BETWEEN ? AND ?`;
+    }
+    this.params.push(min, max);
+    return this;
+  }
+
+  // WHERE LIKE
+  // Usage: whereLike("name", "%John%")
+  //useCase: whereLike("column", "%pattern%")
+  whereLike(column, pattern) {
+    if (!pattern) {
+      throw new Error("Pattern is required for whereLike");
+    }
+    if (this.query.includes("WHERE")) {
+      this.query += ` AND ${column} LIKE ?`;
+    } else {
+      this.query += ` WHERE ${column} LIKE ?`;
+    }
+    this.params.push(pattern);
+    return this;
+  }
+
+  // WHERE IS NULL
+  //useCase: whereNull("deleted_at")
+  whereNull(column) {
+    if (!column) {
+      throw new Error("Column name is required for whereNull");
+    }
+    if (this.query.includes("WHERE")) {
+      this.query += ` AND ${column} IS NULL`;
+    } else {
+      this.query += ` WHERE ${column} IS NULL`;
+    }
+    return this;
+  }
+
+  // WHERE IS NOT NULL
+  //useCase: whereNotNull("deleted_at")
+  whereNotNull(column) {
+    if (!column) {
+      throw new Error("Column name is required for whereNull");
+    }
+    if (this.query.includes("WHERE")) {
+      this.query += ` AND ${column} IS NOT NULL`;
+    } else {
+      this.query += ` WHERE ${column} IS NOT NULL`;
+    }
+    return this;
+  }
+
   // ORDER BY
   orderBy(column, direction = "ASC") {
     this.query += ` ORDER BY ${column} ${direction}`;
@@ -147,6 +234,7 @@ class QueryBuilder {
     this.query += ` LIMIT ${count}`;
     return this;
   }
+
   limitRange(start, end) {
     if (start.toString().trim() === "")
       throw "Parameter 1 is required for limit to work";
@@ -215,6 +303,7 @@ class QueryBuilder {
     return this;
   }
 
+  //useCase: aggregate("SUM", "amount", "total_amount")
   aggregate(func, column, alias = null) {
     this.type = "select";
     const upperFunc = func.toUpperCase();
@@ -240,6 +329,18 @@ class QueryBuilder {
     this.query = `SELECT ${selectClause}`;
     // console.log(this.params, this.query);
 
+    return this;
+  }
+
+  //useCase :having("total_amount", ">", 1000)
+  //useCase: having("COUNT(id)", ">", 5)
+  having(column, operator, value) {
+    if (this.query.includes("HAVING")) {
+      this.query += ` AND ${column} ${operator} ?`;
+    } else {
+      this.query += ` HAVING ${column} ${operator} ?`;
+    }
+    this.params.push(value);
     return this;
   }
 

@@ -120,15 +120,28 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.get("/test", async (req, res) => {
+app.get("/:resources", async (req, res) => {
   try {
+    const tableName = req.params.resources;
+    const params = req.query;
+
     const data = await new Model()
-      .select(["*"], "bookings")
-      .where([{ column: "room_number", value: "%1" }], "LIKE", "AND")
-      //   .aggregate("SUM", "room_amount", "total_amount")
-      //   .from("bookings")
-      //   .where([{ column: "payment_status", value: "pending" }])
-      .execute();
+
+      .select(["*"], tableName)
+      .applyQueryParams(params, {
+        searchable: ["name", "email", "index_number"],
+        filterable: ["status", "role", "age", "hall_affiliate"],
+        sortable: ["name", "created_at"],
+        maxLimit: 100,
+        defaultLimit: 20,
+      })
+      .paginate();
+
+    //   .where([{ column: "room_number", value: "%1" }], "LIKE", "AND")
+    //   //   .aggregate("SUM", "room_amount", "total_amount")
+    //   //   .from("bookings")
+    //   //   .where([{ column: "payment_status", value: "pending" }])
+    //   .execute();
     res.json({ success: true, data });
   } catch (error) {
     console.error(error);
