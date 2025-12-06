@@ -21,6 +21,31 @@ const utils = {
       record: recordValues[0], // The first element is the record object we want
     };
   },
-};
+  removePasswordFromObject(obj) {
+    const clone = structuredClone(obj); // deep clone for safety
 
+    // If the object itself has a password
+    if (clone?.password) {
+      delete clone.password;
+    }
+
+    // Check for results/items/data keys
+    const collections = ["results", "items", "data"];
+
+    for (const key of collections) {
+      if (Array.isArray(clone[key])) {
+        clone[key] = clone[key].map((item) => {
+          if (item && typeof item === "object") {
+            const newItem = { ...item };
+            delete newItem.password;
+            return newItem;
+          }
+          return item;
+        });
+      }
+    }
+
+    return clone;
+  },
+};
 module.exports = utils;

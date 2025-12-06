@@ -12,7 +12,10 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const conn = require("./core/config/conn");
-const Model = require("./shared/model/model");
+const Model = require("./core/model/model");
+const validateTable = require("./core/middleware/validateTable");
+const AppError = require("./shared/helpers/AppError");
+const logger = require("./shared/helpers/logger");
 
 const app = express();
 const server = http.createServer(app);
@@ -120,32 +123,55 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.get("/:resources", async (req, res) => {
+app.get("/api/:resources", validateTable, async (req, res) => {
   try {
     const tableName = req.params.resources;
     const params = req.query;
 
     const data = await new Model()
+      .setSql(
+        `
+        SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = ${tableName};
 
-      .select(["*"], tableName)
-      .applyQueryParams(params, {
-        searchable: ["name", "email", "index_number"],
-        filterable: ["status", "role", "age", "hall_affiliate"],
-        sortable: ["name", "created_at"],
-        maxLimit: 100,
-        defaultLimit: 20,
-      })
-      .paginate();
+      `
+      )
+      .execute();
+    // .select(["*"], tableName)
+    // .applyQueryParams(params, {
+    //   searchable: ["name", "email", "index_number"],
+    //   filterable: ["status", "role", "age", "hall_affiliate"],
+    //   sortable: ["name", "created_at"],
+    //   maxLimit: 100,
+    //   defaultLimit: 20,
+    // })
+    // .paginate();
 
     //   .where([{ column: "room_number", value: "%1" }], "LIKE", "AND")
     //   //   .aggregate("SUM", "room_amount", "total_amount")
     //   //   .from("bookings")
     //   //   .where([{ column: "payment_status", value: "pending" }])
-    //   .execute();
+    console.log(data);
     res.json({ success: true, data });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: error.message });
+    logger.access("ERR_BAD_REQUEST", {
+      error: {
+        code: error.code,
+        message: error.message,
+        status: 500,
+      },
+      route: req.originalUrl,
+      method: req.method,
+      ip: req.ip,
+    });
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "An error occurred while processing your request.",
+    });
   }
 });
 

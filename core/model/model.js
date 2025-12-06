@@ -1,5 +1,6 @@
-const conn = require("../../core/config/conn");
-const QueryBuilder = require("../../core/lib/queryBuilder");
+const conn = require("../config/conn");
+const QueryBuilder = require("../lib/queryBuilder");
+const utils = require("../../shared/utils/functions");
 
 class Model extends QueryBuilder {
   constructor() {
@@ -11,7 +12,8 @@ class Model extends QueryBuilder {
   async execute() {
     try {
       const [rows] = await this.pool.query(this.query, this.params);
-
+      console.log("Executed SQL:", this.query);
+      console.log("With parameters:", this.params);
       // Reset after execution for reusability
       const result = rows;
       this.reset();
@@ -165,10 +167,12 @@ class Model extends QueryBuilder {
     this.limit(limitNum).offset(offset);
 
     // Execute paginated query
-    const data = await this.execute();
+    const result = await this.execute();
+
+    const newResults = utils.removePasswordFromObject({ results: result });
 
     return {
-      data,
+      result: newResults.results,
       pagination: {
         total,
         page: pageNum,
@@ -264,6 +268,16 @@ class Model extends QueryBuilder {
     } finally {
       connection.release();
     }
+  }
+
+  async tableExists(tableName) {
+    const sql = `
+      SELECT COUNT(*) AS count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() AND table_name = ?
+    `;
+    const results = await this.raw(sql, [tableName]);
+    return results[0].count > 0;
   }
 
   /**

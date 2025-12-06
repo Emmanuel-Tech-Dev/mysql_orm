@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "F:\\Next JS Projects\\mysql_orm\\resources\\logs\\.0a18c5e3fa09a12defbca2f0b4e61bddc8c38456-audit.json",
+    "files": [
+        {
+            "date": 1765014818638,
+            "name": "F:\\Next JS Projects\\mysql_orm\\resources\\logs\\combined-2025-12-06.log",
+            "hash": "3e3380f6c7183ba42b42ba7c2118c2df0007a7d010fa8a5da371f49455db8c65"
+        }
+    ],
+    "hashType": "sha256"
+}
