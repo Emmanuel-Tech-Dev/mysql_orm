@@ -21,31 +21,34 @@ const utils = {
       record: recordValues[0], // The first element is the record object we want
     };
   },
-  removePasswordFromObject(obj) {
-    const clone = structuredClone(obj); // deep clone for safety
+  removePasswordFromObject(data) {
+    const clone = structuredClone(data); // deep clone for safety
 
-    // If the object itself has a password
-    if (clone?.password) {
-      delete clone.password;
-    }
-
-    // Check for results/items/data keys
-    const collections = ["results", "items", "data"];
-
-    for (const key of collections) {
-      if (Array.isArray(clone[key])) {
-        clone[key] = clone[key].map((item) => {
-          if (item && typeof item === "object") {
-            const newItem = { ...item };
-            delete newItem.password;
-            return newItem;
+    // Helper function to recursively remove password from an object
+    const removePassword = (obj) => {
+      if (obj && typeof obj === "object") {
+        if (obj.password) {
+          delete obj.password;
+        }
+        // Recursively check all properties
+        Object.keys(obj).forEach((key) => {
+          if (Array.isArray(obj[key])) {
+            obj[key] = obj[key].map((item) => removePassword(item));
+          } else if (obj[key] && typeof obj[key] === "object") {
+            removePassword(obj[key]);
           }
-          return item;
         });
       }
+      return obj;
+    };
+
+    // Handle direct array input
+    if (Array.isArray(clone)) {
+      return clone.map((item) => removePassword(item));
     }
 
-    return clone;
+    // Handle object input
+    return removePassword(clone);
   },
 };
 module.exports = utils;

@@ -12,9 +12,9 @@ class Model extends QueryBuilder {
   async execute() {
     try {
       const [rows] = await this.pool.query(this.query, this.params);
-      console.log("Executed SQL:", this.query);
-      console.log("With parameters:", this.params);
-      // Reset after execution for reusability
+      // console.log("Executed SQL:", this.query);
+      // console.log("With parameters:", this.params);
+      // // Reset after execution for reusability
       const result = rows;
       this.reset();
 
@@ -33,7 +33,7 @@ class Model extends QueryBuilder {
       filterable = [],
       sortable = [],
       maxLimit = 100,
-      defaultLimit = 20,
+      defaultLimit = 10,
     } = options;
 
     // console.log(options);
@@ -141,7 +141,7 @@ class Model extends QueryBuilder {
     const pageNum =
       page !== undefined ? parseInt(page) : this._paginate.page || 1;
     const limitNum =
-      limit !== undefined ? parseInt(limit) : this._paginate.limit || 20;
+      limit !== undefined ? parseInt(limit) : this._paginate.limit || 10;
 
     if (!pageNum || !limitNum) {
       throw new Error(

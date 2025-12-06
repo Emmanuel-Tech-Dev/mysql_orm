@@ -118,13 +118,13 @@ mysql_orm/
 │   │   └── conn.js                 # MySQL connection pool setup
 │   ├── lib/
 │   │   ├── queryBuilder.js         # Fluent query builder class
-│   │   └── baseRoute.js            # Base route configuration
+│   │   └── baseService.js          # Base service (business logic)
 │   ├── middleware/
 │   │   └── validateTable.js        # Table validation middleware
 │   └── model/
 │       └── model.js                # Model class (extends QueryBuilder)
 ├── route/
-│   └── genericRoute.js             # Generic route handler
+│   └── baseRoute.js                # Base route handler (instantiates BaseService)
 ├── resources/
 │   └── logs/                       # Application logs directory
 ├── shared/
@@ -554,6 +554,40 @@ async function validateTable(req, res, next) {
 
 ---
 
+## 🔁 Routing & BaseService
+
+This project uses a small routing helper class `BaseRoute` (in `route/baseRoute.js`) that wires HTTP routes to a per-request `BaseService` instance. `BaseService` lives in `core/lib/baseService.js` and is constructed with the current `req` and `res` objects: `new BaseService(req, res)`.
+
+Key points about the current pattern:
+
+- `BaseRoute` registers route handlers and (for each request) creates `new BaseService(req, res)` before calling service methods.
+- `BaseService` focuses on business logic/DB calls and typically lets errors bubble up (do not swallow errors inside the service).
+- The route handler (or controller) should catch errors and use the logger to record details, then send an HTTP response.
+
+Example (pattern used in `route/baseRoute.js`):
+
+```javascript
+app.get("/api/:resources", validateTable, async (req, res) => {
+  try {
+    const service = new BaseService(req, res);
+    const data = await service.findAll();
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    logger.error("ERROR_FINDING_ALL", {
+      error: err.message,
+      route: req.originalUrl,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: "Something went wrong." });
+  }
+});
+```
+
+This approach keeps `BaseService` testable and reusable while centralizing HTTP error handling in the route layer.
+
+---
+
 ## 🔧 Utilities & Helpers
 
 ### Logger Service
@@ -607,18 +641,23 @@ const converted = utils.convertArrayToObject(data);
 // Result: { record: { id: 1, name: "John" }, ... }
 ```
 
-#### Remove Password from Object
+#### Remove Password from Object (updated)
+
+The utility `removePasswordFromObject` has been updated to handle:
+
+- Direct arrays (pass an array of objects)
+- Objects with nested arrays under keys like `results`, `items`, or `data`
+- Deeply nested objects — removal is recursive
 
 ```javascript
-// Removes password fields from objects (for API responses)
-const safeUser = utils.removePasswordFromObject(userData);
+// Direct array input
+const users = [
+  { id: 1, username: "john", password: "secret" },
+  { id: 2, username: "jane", password: "secret" },
+];
+const safeUsers = utils.removePasswordFromObject(users);
 
-// Also removes passwords from arrays
-const safeUsers = utils.removePasswordFromObject({
-  results: [userObj1, userObj2],
-});
-
-// Also works with 'items' and 'data' keys
+// Object with data/results arrays
 const response = {
   data: [
     { id: 1, username: "john", password: "secret" },
@@ -626,7 +665,14 @@ const response = {
   ],
 };
 const safe = utils.removePasswordFromObject(response);
-// Passwords are removed from all items in the data array
+
+// Deeply nested example
+const nested = {
+  meta: { total: 2 },
+  items: [{ user: { id: 1, password: "x" }, profile: { password: "y" } }],
+};
+const cleaned = utils.removePasswordFromObject(nested);
+// All `password` fields removed from arrays and nested objects
 ```
 
 ---

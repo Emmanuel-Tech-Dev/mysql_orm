@@ -2,6 +2,7 @@ const winston = require("winston");
 const path = require("path");
 require("winston-daily-rotate-file");
 const fs = require("fs");
+const ERROR_CODES = require("./erroCodes");
 
 // Environment configuration with validation
 const ENV = process.env.NODE_ENV || "development";
@@ -172,7 +173,79 @@ class LoggerService {
     }
   }
 
-  // Convenience methods with typed metadata
+  // ============================================================================
+  // ERROR CODE HELPER METHODS
+  // ============================================================================
+
+  /**
+   * Find error code by status and optional hint
+   * @param {number} status - HTTP status code
+   * @param {string} hint - Optional keyword to match specific error code
+   * @returns {object|null} Error code info or null
+   */
+  _findErrorCodeByStatus(status, hint = null) {
+    const matches = Object.entries(ERROR_CODES).filter(
+      ([_, value]) => value.status === status
+    );
+
+    if (matches.length === 0) {
+      return null;
+    }
+
+    // If there's only one match, use it
+    if (matches.length === 1) {
+      return { code: matches[0][0], ...matches[0][1] };
+    }
+
+    // If multiple matches and hint provided, try to find best match
+    if (hint) {
+      const hintLower = hint.toLowerCase();
+      const bestMatch = matches.find(([code, _]) =>
+        code.toLowerCase().includes(hintLower)
+      );
+      if (bestMatch) {
+        return { code: bestMatch[0], ...bestMatch[1] };
+      }
+    }
+
+    // Default to first match (usually the generic one)
+    return { code: matches[0][0], ...matches[0][1] };
+  }
+
+  /**
+   * Smart error logging with automatic error code detection
+   * @param {Error|string} error - Error object or message
+   * @param {object} context - Additional context (status, hint, route, method, ip, etc.)
+   */
+  smartError(error, context = {}) {
+    const status = error.status || error.statusCode || context.status || 500;
+    const hint = error.code || context.hint;
+
+    const errorInfo = this._findErrorCodeByStatus(status, hint);
+
+    const metadata = {
+      errorCode: errorInfo?.code || "UNKNOWN",
+      status: errorInfo?.status || status,
+      errorMessage: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      ...context,
+    };
+
+    // Remove hint from metadata to avoid clutter
+    delete metadata.hint;
+
+    const logMessage = errorInfo
+      ? `[${errorInfo.code}] ${errorInfo.message}`
+      : error instanceof Error
+      ? error.message
+      : error;
+
+    this.log("error", logMessage, metadata);
+  }
+
+  // ============================================================================
+  // CONVENIENCE METHODS
+  // ============================================================================
 
   access(message, meta = {}) {
     this.log("access", message, meta);
@@ -231,7 +304,9 @@ class LoggerService {
   }
 }
 
-// Singleton instance
+// ============================================================================
+// SINGLETON INSTANCE
+// ============================================================================
 const loggerService = new LoggerService();
 
 // Auto-initialize on first import
@@ -239,4 +314,5 @@ loggerService.initialize().catch((err) => {
   console.error("Logger auto-initialization failed:", err);
 });
 
+// Export both the service and error codes
 module.exports = loggerService;

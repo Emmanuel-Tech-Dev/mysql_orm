@@ -268,22 +268,37 @@ class QueryBuilder {
   }
 
   bulkInsert(table, dataArray) {
+    if (!Array.isArray(dataArray)) {
+      throw new Error("Data must be an array");
+    }
+
     if (dataArray.length === 0) {
       throw new Error("Data array for bulk insert cannot be empty");
     }
 
-    const columns = Object.keys(dataArray[0]);
-    const valuesPlaceholders = dataArray
-      .map(() => `(${columns.map(() => "?").join(", ")})`)
+    const allKeys = [
+      ...new Set(dataArray.flatMap((record) => Object.keys(record))),
+    ];
+
+    if (allKeys.length === 0) {
+      throw new Error("Records must contain at least one field");
+    }
+
+    const columns = allKeys.join(", ");
+
+    // Use placeholders instead of direct values
+    const placeholders = dataArray
+      .map(() => `(${allKeys.map(() => "?").join(", ")})`)
       .join(", ");
 
-    this.query = `INSERT INTO ${table} (${columns.join(
-      ", "
-    )}) VALUES ${valuesPlaceholders}`;
+    // Flatten all values in order
+    this.params = dataArray.flatMap((record) =>
+      allKeys.map((key) => record[key] ?? null)
+    );
 
-    this.params = dataArray.reduce((acc, data) => {
-      return acc.concat(Object.values(data));
-    }, []);
+    this.query = `INSERT INTO ${table} (${columns}) VALUES ${placeholders}`;
+
+    return this;
   }
 
   // UPDATE
@@ -419,7 +434,7 @@ async function example4() {
   console.log("Admins or moderators:", users);
 }
 
-// Example 5: Complex query with pagination
+// Example 5: Complex query .gination
 async function example5() {
   const qb = new QueryBuilder();
   const pagedUsers = await qb

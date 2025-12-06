@@ -1,0 +1,39 @@
+{
+  "name": "Find With Query",
+  "request": {
+    "type": "http",
+    "url": "{{base_urll}}/rooms/query",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [
+      {
+        "id": 0.34883112804857275,
+        "key": "page",
+        "value": "1",
+        "isEnabled": true
+      },
+      {
+        "id": 0.47485786811882935,
+        "key": "limit",
+        "value": "10",
+        "isEnabled": true
+      }
+    ],
+    "headers": [],
+    "body": "{\n          \"searchable\": [\"index_number\"],\n          \"filterable\": [\"status\", \"role\", \"age\", \"hall_affiliate\"],\n          \"sortable\": [\"name\", \"created_at\"],\n          \"maxLimit\": 100,\n          \"defaultLimit\": 10\n        }",
+    "bodyContainer": {
+      "text": "{\n          \"searchable\": [\"index_number\"],\n          \"filterable\": [\"status\", \"role\", \"age\", \"hall_affiliate\"],\n          \"sortable\": [\"name\", \"created_at\"],\n          \"maxLimit\": 100,\n          \"defaultLimit\": 10\n        }",
+      "form": [],
+      "multipartForm": []
+    },
+    "contentType": "application/json",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

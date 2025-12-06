@@ -1,0 +1,26 @@
+{
+  "name": "Bulk Creating",
+  "request": {
+    "type": "http",
+    "url": "{{BASE_URL}}/rooms/bulk",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [],
+    "headers": [],
+    "body": "[\n  {\n   \n    \"hall_id\": 23,\n    \"room_number\": \"A-209\",\n    \"room_type\": \"Standard\",\n    \"room_price\": 1500.00,\n    \"available_spots\": 2,\n    \"room_capacity\": 4\n  },\n  {\n \n    \"hall_id\": 23,\n    \"room_number\": \"A-205\",\n    \"room_type\": \"Deluxe\",\n    \"room_price\": 2000.00,\n    \"available_spots\": 0,\n    \"room_capacity\": 2\n  },\n  {\n   \n    \"hall_id\": 23,\n    \"room_number\": \"B-101\",\n    \"room_type\": \"Suite\",\n    \"room_price\": 3500.00,\n    \"available_spots\": 1,\n    \"room_capacity\": 6\n  }\n]",
+    "bodyContainer": {
+      "text": "[\n  {\n   \n    \"hall_id\": 23,\n    \"room_number\": \"A-209\",\n    \"room_type\": \"Standard\",\n    \"room_price\": 1500.00,\n    \"available_spots\": 2,\n    \"room_capacity\": 4\n  },\n  {\n \n    \"hall_id\": 23,\n    \"room_number\": \"A-205\",\n    \"room_type\": \"Deluxe\",\n    \"room_price\": 2000.00,\n    \"available_spots\": 0,\n    \"room_capacity\": 2\n  },\n  {\n   \n    \"hall_id\": 23,\n    \"room_number\": \"B-101\",\n    \"room_type\": \"Suite\",\n    \"room_price\": 3500.00,\n    \"available_spots\": 1,\n    \"room_capacity\": 6\n  }\n]",
+      "form": [],
+      "multipartForm": []
+    },
+    "contentType": "application/json",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

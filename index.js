@@ -16,6 +16,7 @@ const Model = require("./core/model/model");
 const validateTable = require("./core/middleware/validateTable");
 const AppError = require("./shared/helpers/AppError");
 const logger = require("./shared/helpers/logger");
+const BaseRoute = require("./route/baseRoute");
 
 const app = express();
 const server = http.createServer(app);
@@ -112,6 +113,8 @@ app.use((req, res, next) => {
   next();
 });
 
+new BaseRoute(app);
+
 app.get("/", async (req, res) => {
   try {
     const [results] = await conn.query("SELECT 1 + 1 AS solution");
@@ -123,57 +126,57 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.get("/api/:resources", validateTable, async (req, res) => {
-  try {
-    const tableName = req.params.resources;
-    const params = req.query;
+// app.get("/api/:resources", validateTable, async (req, res) => {
+//   try {
+//     const tableName = req.params.resources;
+//     const params = req.query;
 
-    const data = await new Model()
-      .setSql(
-        `
-        SELECT COLUMN_NAME
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = ${tableName};
+//     const data = await new Model()
+//       .setSql(
+//         `
+//         SELECT COLUMN_NAME
+// FROM INFORMATION_SCHEMA.COLUMNS
+// WHERE TABLE_SCHEMA = DATABASE()
+//   AND TABLE_NAME = ${tableName};
 
-      `
-      )
-      .execute();
-    // .select(["*"], tableName)
-    // .applyQueryParams(params, {
-    //   searchable: ["name", "email", "index_number"],
-    //   filterable: ["status", "role", "age", "hall_affiliate"],
-    //   sortable: ["name", "created_at"],
-    //   maxLimit: 100,
-    //   defaultLimit: 20,
-    // })
-    // .paginate();
+//       `
+//       )
+//       .execute();
+//     // .select(["*"], tableName)
+//     // .applyQueryParams(params, {
+//     //   searchable: ["name", "email", "index_number"],
+//     //   filterable: ["status", "role", "age", "hall_affiliate"],
+//     //   sortable: ["name", "created_at"],
+//     //   maxLimit: 100,
+//     //   defaultLimit: 20,
+//     // })
+//     // .paginate();
 
-    //   .where([{ column: "room_number", value: "%1" }], "LIKE", "AND")
-    //   //   .aggregate("SUM", "room_amount", "total_amount")
-    //   //   .from("bookings")
-    //   //   .where([{ column: "payment_status", value: "pending" }])
-    console.log(data);
-    res.json({ success: true, data });
-  } catch (error) {
-    logger.access("ERR_BAD_REQUEST", {
-      error: {
-        code: error.code,
-        message: error.message,
-        status: 500,
-      },
-      route: req.originalUrl,
-      method: req.method,
-      ip: req.ip,
-    });
+//     //   .where([{ column: "room_number", value: "%1" }], "LIKE", "AND")
+//     //   //   .aggregate("SUM", "room_amount", "total_amount")
+//     //   //   .from("bookings")
+//     //   //   .where([{ column: "payment_status", value: "pending" }])
+//     console.log(data);
+//     res.json({ success: true, data });
+//   } catch (error) {
+//     logger.access("ERR_BAD_REQUEST", {
+//       error: {
+//         code: error.code,
+//         message: error.message,
+//         status: 500,
+//       },
+//       route: req.originalUrl,
+//       method: req.method,
+//       ip: req.ip,
+//     });
 
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "An error occurred while processing your request.",
-    });
-  }
-});
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//       message: "An error occurred while processing your request.",
+//     });
+//   }
+// });
 
 // Remove conn.connect() and conn.end() entirely
 server.listen(PORT, () => {
