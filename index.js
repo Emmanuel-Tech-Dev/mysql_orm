@@ -40,10 +40,13 @@ const limiter = rateLimiter({
 //   },
 // });
 
+// console.log(bodyPaser.json());
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(limiter);
 app.use(bodyPaser.json());
+
 app.use(bodyPaser.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(responseTime());
@@ -126,57 +129,41 @@ app.get("/", async (req, res) => {
   }
 });
 
-// app.get("/api/:resources", validateTable, async (req, res) => {
-//   try {
-//     const tableName = req.params.resources;
-//     const params = req.query;
+app.post("/api/v1/joins_data", async (req, res) => {
+  try {
+    const tableName = req.params.resources;
+    const params = req.query;
 
-//     const data = await new Model()
-//       .setSql(
-//         `
-//         SELECT COLUMN_NAME
-// FROM INFORMATION_SCHEMA.COLUMNS
-// WHERE TABLE_SCHEMA = DATABASE()
-//   AND TABLE_NAME = ${tableName};
+    const { tbl1, tbl2 } = req.body;
+    const data = await new Model()
+      .multiSelect([
+        { table: "halls", columns: ["id", "hall_name"] },
+        { table: "rooms", columns: [] }, // No room columns, just for joining
+      ])
+      .addAggregate("SUM", "rooms.room_capacity", "total_capacity") // Won't work - need custom approach
+      .join("INNER", "rooms", "halls.id", "rooms.hall_id")
+      .groupBy(["halls.id", "halls.hall_name"])
+      .execute();
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.access("ERR_BAD_REQUEST", {
+      error: {
+        code: error.code,
+        message: error.message,
+        status: 500,
+      },
+      route: req.originalUrl,
+      method: req.method,
+      ip: req.ip,
+    });
 
-//       `
-//       )
-//       .execute();
-//     // .select(["*"], tableName)
-//     // .applyQueryParams(params, {
-//     //   searchable: ["name", "email", "index_number"],
-//     //   filterable: ["status", "role", "age", "hall_affiliate"],
-//     //   sortable: ["name", "created_at"],
-//     //   maxLimit: 100,
-//     //   defaultLimit: 20,
-//     // })
-//     // .paginate();
-
-//     //   .where([{ column: "room_number", value: "%1" }], "LIKE", "AND")
-//     //   //   .aggregate("SUM", "room_amount", "total_amount")
-//     //   //   .from("bookings")
-//     //   //   .where([{ column: "payment_status", value: "pending" }])
-//     console.log(data);
-//     res.json({ success: true, data });
-//   } catch (error) {
-//     logger.access("ERR_BAD_REQUEST", {
-//       error: {
-//         code: error.code,
-//         message: error.message,
-//         status: 500,
-//       },
-//       route: req.originalUrl,
-//       method: req.method,
-//       ip: req.ip,
-//     });
-
-//     res.status(500).json({
-//       success: false,
-//       error: error.message,
-//       message: "An error occurred while processing your request.",
-//     });
-//   }
-// });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "An error occurred while processing your request.",
+    });
+  }
+});
 
 // Remove conn.connect() and conn.end() entirely
 server.listen(PORT, () => {

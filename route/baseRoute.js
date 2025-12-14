@@ -1,12 +1,14 @@
 const validateTable = require("../core/middleware/validateTable");
 const BaseService = require("../core/lib/baseService");
 const loggerService = require("../shared/helpers/logger");
+const { response } = require("express");
 
 class BaseRoute {
   constructor(app) {
     this.app = app;
     this.findAll(app);
     this.findWithParams(app);
+    this.findOne(app);
     this.create(app);
     this.bulkCreate(app);
     this.update(app);
@@ -18,11 +20,11 @@ class BaseRoute {
   findAll(app) {
     app.get("/api/:resources", validateTable, async (req, res) => {
       try {
-        console.log("HERE");
         const service = new BaseService(req, res);
         const data = await service.findAll();
-        return res.status(200).json({
+        res.status(200).json({
           success: true,
+          message: "Operation Successful!",
           data: data,
         });
       } catch (error) {
@@ -46,30 +48,54 @@ class BaseRoute {
   }
 
   findWithParams(app) {
+    // Support both GET and POST for query endpoint. GET is handy for URL-based filters
     app.post("/api/:resources/query", validateTable, async (req, res) => {
       try {
         const service = new BaseService(req, res);
-        const data = await service.findAllWithParams(req.body);
 
-        return res.status(200).json({
+        const data = await service.findAllWithParams(req.body || {});
+        console.log(data);
+
+        res.status(200).json({
           success: true,
+          message: "Operation Successful!",
           data: data,
         });
       } catch (error) {
-        // loggerService.error("ERROR_FINDING_WITH_PARAMS", {
-        //   error: {
-        //     code: "ERR_BAD_REQUEST",
-        //     message: error.message,
-        //     status: 500,
-        //     stack: error.stack,
-        //   },
-        //   route: req.originalUrl,
-        //   method: req.method,
-        //   ip: req.ip,
-        // });
-        return res.status(500).json({
+        // loggerService.error("ERROR_FINDING_WITH_PARAMS", { ... })
+        res.status(500).json({
           success: false,
           message: "Something went wrong. Please try again later.",
+        });
+      }
+    });
+    // app.get("/api/:resources/query", validateTable, handler);
+  }
+
+  findOne(app) {
+    app.get("/api/:resources/:id", async (req, res) => {
+      try {
+        const service = new BaseService();
+        const data = await service.findOne(req.params);
+        if (!data) {
+          res.status(404).json({
+            success: false,
+            message: "Operation failed!",
+            details: "Resources not found",
+          });
+        }
+
+        res.status(200).json({
+          success: true,
+          message: "Operation Successfull!",
+          // details: "Resource created successfully",
+          data: data,
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "Operation failed!",
+          details: "Something went wrong. Please try again later",
         });
       }
     });
@@ -93,7 +119,7 @@ class BaseRoute {
         }
         await service.create(req.body);
 
-        return res.status(201).json({
+        res.status(201).json({
           success: true,
           message: "Operation Successfull!",
           details: "Resource created successfully",
@@ -110,7 +136,7 @@ class BaseRoute {
           method: req.method,
           ip: req.ip,
         });
-        return res.status(500).json({
+        res.status(500).json({
           success: false,
           message: "Something went wrong. Please try again later.",
         });
@@ -142,9 +168,72 @@ class BaseRoute {
     });
   }
 
-  update(app) {}
+  update(app) {
+    app.put("/api/:resources/:id", validateTable, async (req, res) => {
+      try {
+        const service = new BaseService(req, res);
+
+        const data = await service.findOne(req.params);
+        if (!data) {
+          res.status(404).json({
+            success: false,
+            message: "Operation failed!",
+            details: "Resources not found",
+          });
+        }
+
+        await service.updateRecord(req.body);
+
+        res.status(201).json({
+          success: true,
+          message: "Operation Successfull!",
+          details: "Resource updated successfully",
+        });
+      } catch (eror) {
+        res.status(500).json({
+          success: false,
+          message: "Operation failed!",
+          details: "Something went wrong. Please try again later",
+        });
+      }
+    });
+  }
   updateSome(app) {}
-  delete(app) {}
+
+  delete(app) {
+    app.delete("/api/:resources/:id", validateTable, async (req, res) => {
+      try {
+        // console.log(req.params);
+        // const {id} = req.params
+        // return;
+        const service = new BaseService(req, res);
+
+        const data = await service.findOne(req.params);
+        if (!data) {
+          res.status(404).json({
+            success: false,
+            message: "Operation failed!",
+            details: "Resources not found",
+          });
+        }
+
+        await service.deleteRecord(req.params);
+
+        res.status(201).json({
+          success: true,
+          message: "Operation Successfull!",
+          details: "Resource deleted successfully",
+        });
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({
+          success: false,
+          message: "Operation failed!",
+          details: "Something went wrong. Please try again later",
+        });
+      }
+    });
+  }
 }
 
 module.exports = BaseRoute;

@@ -1,5 +1,5 @@
-const loggerService = require("../../shared/helpers/logger");
 const utils = require("../../shared/utils/functions");
+
 const Model = require("../model/model");
 
 class BaseService {
@@ -9,9 +9,8 @@ class BaseService {
   }
 
   async findAll() {
-    const res = await new Model()
-      .select(["*"], this.request.params.resources)
-      .execute();
+    const { resources } = this.request.params;
+    const res = await new Model().select(["*"], resources).paginate(1, 10);
     // console.log(res);
     const data = utils.removePasswordFromObject(res);
 
@@ -19,27 +18,56 @@ class BaseService {
   }
 
   async findAllWithParams(options = {}) {
-    console.log(options);
+    // console.log(options);
+    const { resources } = this.request.params;
+    console.log(this.request.params);
+    const { paginate } = options;
+
     const res = await new Model()
-      .select(["*"], this.request.params.resources)
+      .select(["*"], resources)
       .applyQueryParams(this.request.query, options)
-      .paginate();
+      .paginate(paginate?.page, paginate?.limit);
     // .execute();
 
     return res;
   }
 
-  async create(payload) {
+  async findOne(payload) {
     const res = await new Model()
-      .insert(this.request.params.resources, payload)
+      .select(["*"], payload?.resources)
+      .where("id", "=", payload?.id)
       .execute();
+    return res[0];
+  }
+
+  async create(payload) {
+    const { resources } = this.request.params;
+    const res = await new Model().insert(resources, payload).execute();
 
     return res;
   }
 
   async bulkCreate(payload) {
+    const { resources } = this.request.params;
+    const res = await new Model().bulkInsert(resources, payload).execute();
+
+    return res;
+  }
+
+  async updateRecord(payload) {
+    const { resources, id } = this.request.params;
     const res = await new Model()
-      .bulkInsert(this.request.params.resources, payload)
+      .update(resources, payload)
+      .where("id", "=", id)
+      .execute();
+
+    return res;
+  }
+
+  async deleteRecord(payload) {
+    const res = await new Model()
+      .delete(payload?.resources)
+      .where("id", "=", payload?.id)
       .execute();
 
     return res;

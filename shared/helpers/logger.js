@@ -48,10 +48,8 @@ class LoggerService {
 
   async _initializeInternal() {
     try {
-      // Ensure log directory exists
-      await fs.promises.mkdir(LOG_PATH, { recursive: true });
+      await fs.promises.mkdir(LOG_PATH, { recursive: true }); // check if directory exist;
 
-      // Custom format with structured data
       const structuredFormat = winston.format.combine(
         winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss.SSS" }),
         winston.format.errors({ stack: true }),
@@ -61,7 +59,6 @@ class LoggerService {
         winston.format.json()
       );
 
-      // Human-readable console format
       const consoleFormat = winston.format.combine(
         winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
         winston.format.colorize(),
@@ -76,7 +73,6 @@ class LoggerService {
         )
       );
 
-      // Base logger setup
       this.logger = winston.createLogger({
         level: LOG_LEVEL,
         format: structuredFormat,
@@ -85,7 +81,6 @@ class LoggerService {
         exitOnError: false,
       });
 
-      // Console transport for non-production
       if (ENV !== "production") {
         this.logger.add(
           new winston.transports.Console({
@@ -109,23 +104,23 @@ class LoggerService {
       );
 
       // Exception and rejection handlers
-      this.logger.exceptions.handle(
-        new winston.transports.DailyRotateFile({
-          filename: path.join(LOG_PATH, "exceptions-%DATE%.log"),
-          datePattern: "YYYY-MM-DD",
-          maxSize: "20m",
-          maxFiles: "14d",
-        })
-      );
+      // this.logger.exceptions.handle(
+      //   new winston.transports.DailyRotateFile({
+      //     filename: path.join(LOG_PATH, "exceptions-%DATE%.log"),
+      //     datePattern: "YYYY-MM-DD",
+      //     maxSize: "20m",
+      //     maxFiles: "14d",
+      //   })
+      // );
 
-      this.logger.rejections.handle(
-        new winston.transports.DailyRotateFile({
-          filename: path.join(LOG_PATH, "rejections-%DATE%.log"),
-          datePattern: "YYYY-MM-DD",
-          maxSize: "20m",
-          maxFiles: "14d",
-        })
-      );
+      // this.logger.rejections.handle(
+      //   new winston.transports.DailyRotateFile({
+      //     filename: path.join(LOG_PATH, "rejections-%DATE%.log"),
+      //     datePattern: "YYYY-MM-DD",
+      //     maxSize: "20m",
+      //     maxFiles: "14d",
+      //   })
+      // );
     } catch (err) {
       console.error("Failed to initialize logger:", err);
       throw new Error(`Logger initialization failed: ${err.message}`);
@@ -173,16 +168,8 @@ class LoggerService {
     }
   }
 
-  // ============================================================================
-  // ERROR CODE HELPER METHODS
-  // ============================================================================
+  // Find error code by status and optional hint
 
-  /**
-   * Find error code by status and optional hint
-   * @param {number} status - HTTP status code
-   * @param {string} hint - Optional keyword to match specific error code
-   * @returns {object|null} Error code info or null
-   */
   _findErrorCodeByStatus(status, hint = null) {
     const matches = Object.entries(ERROR_CODES).filter(
       ([_, value]) => value.status === status
@@ -208,15 +195,10 @@ class LoggerService {
       }
     }
 
-    // Default to first match (usually the generic one)
+    // Default to first match
     return { code: matches[0][0], ...matches[0][1] };
   }
 
-  /**
-   * Smart error logging with automatic error code detection
-   * @param {Error|string} error - Error object or message
-   * @param {object} context - Additional context (status, hint, route, method, ip, etc.)
-   */
   smartError(error, context = {}) {
     const status = error.status || error.statusCode || context.status || 500;
     const hint = error.code || context.hint;
@@ -242,10 +224,6 @@ class LoggerService {
 
     this.log("error", logMessage, metadata);
   }
-
-  // ============================================================================
-  // CONVENIENCE METHODS
-  // ============================================================================
 
   access(message, meta = {}) {
     this.log("access", message, meta);
@@ -304,9 +282,6 @@ class LoggerService {
   }
 }
 
-// ============================================================================
-// SINGLETON INSTANCE
-// ============================================================================
 const loggerService = new LoggerService();
 
 // Auto-initialize on first import

@@ -1,0 +1,21 @@
+{
+  "name": "Delete Record",
+  "request": {
+    "type": "http",
+    "url": "{{BASE_URL}}/api/rooms/12",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "DELETE",
+    "queryParams": [],
+    "headers": [],
+    "body": null,
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

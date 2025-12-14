@@ -10,22 +10,28 @@
     "method": "POST",
     "queryParams": [
       {
-        "id": 0.34883112804857275,
-        "key": "page",
-        "value": "1",
+        "id": 0.5425742153503921,
+        "key": "search",
+        "value": "multiple",
         "isEnabled": true
       },
       {
-        "id": 0.47485786811882935,
-        "key": "limit",
-        "value": "10",
+        "id": 0.6864883719967572,
+        "key": "available_spots",
+        "value": "3",
+        "isEnabled": true
+      },
+      {
+        "id": 0.9502476258656452,
+        "key": "room_capacity",
+        "value": "4",
         "isEnabled": true
       }
     ],
     "headers": [],
-    "body": "{\n          \"searchable\": [\"index_number\"],\n          \"filterable\": [\"status\", \"role\", \"age\", \"hall_affiliate\"],\n          \"sortable\": [\"name\", \"created_at\"],\n          \"maxLimit\": 100,\n          \"defaultLimit\": 10\n        }",
+    "body": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n        }",
     "bodyContainer": {
-      "text": "{\n          \"searchable\": [\"index_number\"],\n          \"filterable\": [\"status\", \"role\", \"age\", \"hall_affiliate\"],\n          \"sortable\": [\"name\", \"created_at\"],\n          \"maxLimit\": 100,\n          \"defaultLimit\": 10\n        }",
+      "text": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n        }",
       "form": [],
       "multipartForm": []
     },

@@ -11,13 +11,17 @@ class Model extends QueryBuilder {
 
   async execute() {
     try {
-      const [rows] = await this.pool.query(this.query, this.params);
+      const joins = this.buildJoins();
+
+      const finalQuery = utils.buildQuery(this.query, joins);
+      const [rows] = await conn.query(finalQuery, this.params);
       // console.log("Executed SQL:", this.query);
       // console.log("With parameters:", this.params);
       // // Reset after execution for reusability
       const result = rows;
       this.reset();
 
+      // console.log(result);
       return result;
     } catch (error) {
       console.error("Query execution error:", error);
@@ -26,6 +30,16 @@ class Model extends QueryBuilder {
       throw new Error(`Database query failed: ${error.message}`);
     }
   }
+
+  // async execute() {
+  //   try {
+  //     const finalQuery = this.buildQuery();
+  //     const [rows] = await conn.query(finalQuery, this.params);
+  //     return rows;
+  //   } catch (error) {
+  //     throw new Error(`Query execution failed: ${error.message}`);
+  //   }
+  // }
 
   applyQueryParams(queryParams, options = {}) {
     const {
@@ -53,6 +67,7 @@ class Model extends QueryBuilder {
     filterable.forEach((column) => {
       if (queryParams[column] !== undefined && queryParams[column] !== "") {
         this.where(column, "=", queryParams[column]);
+        console.log(queryParams, column);
       }
     });
 

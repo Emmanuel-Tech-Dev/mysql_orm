@@ -1,0 +1,26 @@
+{
+  "name": "Update Data",
+  "request": {
+    "type": "http",
+    "url": "{{BASE_URL}}/rooms/6",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "PUT",
+    "queryParams": [],
+    "headers": [],
+    "body": "{\n  \"room_capacity\"  : 30\n}",
+    "bodyContainer": {
+      "text": "{\n  \"room_capacity\"  : 30\n}",
+      "form": [],
+      "multipartForm": []
+    },
+    "contentType": "application/json",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

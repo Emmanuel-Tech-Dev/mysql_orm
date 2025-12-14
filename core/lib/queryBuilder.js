@@ -1,3 +1,4 @@
+const utils = require("../../shared/utils/functions");
 const conn = require("../config/conn"); // Your connection pool
 
 class QueryBuilder {
@@ -5,6 +6,8 @@ class QueryBuilder {
     this.query = "";
     this.params = [];
     this.type = "";
+    this.joins = [];
+    this.selectedTables = [];
   }
 
   // SELECT columns
@@ -229,6 +232,16 @@ class QueryBuilder {
     return this;
   }
 
+  // GROUP BY
+  groupBy(columns) {
+    if (Array.isArray(columns)) {
+      this.query += ` GROUP BY ${columns.join(", ")}`;
+    } else {
+      this.query += ` GROUP BY ${columns}`;
+    }
+    return this;
+  }
+
   // LIMIT
   limit(count) {
     this.query += ` LIMIT ${count}`;
@@ -253,6 +266,118 @@ class QueryBuilder {
   // OFFSET
   offset(count) {
     this.query += ` OFFSET ${count}`;
+    return this;
+  }
+
+  /*
+   * JOIN with flexible type
+   * Usage:
+   *   .join("INNER", "posts", "users.id", "posts.user_id")
+   *   .join("LEFT", "comments", "posts.id", "comments.post_id")
+   *   .join("INNER", "posts", "users.id", "=", "posts.user_id")
+   */
+  join(joinType, table, column1, operator, column2) {
+    const validJoinTypes = ["INNER", "LEFT", "RIGHT", "FULL", "CROSS", "JOIN"];
+    const upperJoinType = joinType.toUpperCase();
+
+    if (!validJoinTypes.includes(upperJoinType)) {
+      throw new Error(
+        `Invalid join type: ${joinType}. Must be one of: ${validJoinTypes.join(
+          ", "
+        )}`
+      );
+    }
+
+    // Handle both 4 and 5 parameter versions
+    let col1, op, col2;
+    if (column2 !== undefined) {
+      // 5 parameters: join("INNER", "posts", "users.id", "=", "posts.user_id")
+      col1 = column1;
+      op = operator;
+      col2 = column2;
+    } else {
+      // 4 parameters: join("INNER", "posts", "users.id", "posts.user_id")
+      col1 = column1;
+      op = "=";
+      col2 = operator;
+    }
+
+    this.joins.push({
+      type: upperJoinType === "CROSS" ? "CROSS JOIN" : `${upperJoinType} JOIN`,
+      table,
+      leftColumn: col1,
+      operator: op,
+      rightColumn: col2,
+    });
+
+    return this;
+  }
+
+  /**
+   * Build JOIN clauses into the query
+   */
+  buildJoins() {
+    if (this.joins.length === 0) return "";
+
+    return this.joins
+      .map((join) => {
+        if (join.type === "CROSS JOIN") {
+          return ` ${join.type} ${join.table}`;
+        }
+        return ` ${join.type} ${join.table} ON ${join.leftColumn} ${join.operator} ${join.rightColumn}`;
+      })
+      .join("");
+  }
+
+  /**
+   * MultiSelect - Select columns from multiple tables with joins
+   * Usage: .multiSelect([
+   *   { table: "users", columns: ["id", "name", "email"] },
+   *   { table: "posts", columns: ["id", "title", "content"] }
+   * ])
+   * .join("INNER", "posts", "users.id", "posts.user_id")
+   */
+  multiSelect(tableSelections) {
+    if (!Array.isArray(tableSelections) || tableSelections.length === 0) {
+      throw new Error(
+        "tableSelections must be a non-empty array of { table, columns } objects"
+      );
+    }
+
+    const selectClauses = [];
+    let mainTable = null;
+
+    tableSelections.forEach((selection) => {
+      const { table, columns } = selection;
+
+      if (!table) {
+        throw new Error("Each table selection must have a 'table' property");
+      }
+
+      if (!mainTable) {
+        mainTable = table;
+      }
+
+      this.selectedTables.push(table);
+
+      if (Array.isArray(columns)) {
+        // Handle ["*"] specially
+        if (columns.length === 1 && columns[0] === "*") {
+          selectClauses.push(`${table}.*`);
+        } else {
+          // Prefix columns with table name for clarity
+          const prefixedColumns = columns.map((col) => `${table}.${col}`);
+          selectClauses.push(...prefixedColumns);
+        }
+      } else if (columns === "*") {
+        selectClauses.push(`${table}.*`);
+      } else {
+        selectClauses.push(`${table}.${columns}`);
+      }
+    });
+
+    this.query = `SELECT ${selectClauses.join(", ")} FROM ${mainTable}`;
+
     return this;
   }
 
@@ -348,6 +473,50 @@ class QueryBuilder {
     return this;
   }
 
+  selectRaw(rawSql) {
+    if (!this.query.includes("SELECT")) {
+      throw new Error(
+        "selectRaw must be called after select() or multiSelect()"
+      );
+    }
+
+    // Find the FROM keyword and insert before it
+    const fromIndex = this.query.toUpperCase().indexOf(" FROM ");
+    if (fromIndex === -1) {
+      throw new Error("Query must have a FROM clause to use selectRaw");
+    }
+
+    this.query =
+      this.query.slice(0, fromIndex) +
+      ", " +
+      rawSql +
+      this.query.slice(fromIndex);
+
+    return this;
+  }
+
+  /**
+   * Add aggregate function to existing SELECT
+   * Usage: .addAggregate("SUM", "amount", "total")
+   */
+  addAggregate(func, column, alias = null) {
+    const upperFunc = func.toUpperCase();
+    const validFunctions = ["COUNT", "SUM", "AVG", "MIN", "MAX"];
+
+    if (!validFunctions.includes(upperFunc)) {
+      throw new Error(
+        `Unsupported aggregate function: ${func}. Must be one of: ${validFunctions.join(
+          ", "
+        )}`
+      );
+    }
+
+    const functionPart = alias
+      ? `${upperFunc}(${column}) AS ${alias}`
+      : `${upperFunc}(${column})`;
+
+    return this.selectRaw(functionPart);
+  }
   //useCase :having("total_amount", ">", 1000)
   //useCase: having("COUNT(id)", ">", 5)
   having(column, operator, value) {
@@ -360,25 +529,20 @@ class QueryBuilder {
     return this;
   }
 
-  // Execute the query
-  async execute() {
-    try {
-      const [rows] = await conn.query(this.query, this.params);
-      return rows;
-    } catch (error) {
-      throw new Error(`Query execution failed: ${error.message}`);
-    }
-  }
-
   // Get the raw query (for debugging)
   getSQL() {
-    return { query: this.query, params: this.params };
+    return {
+      query: utils.buildQuery(this.query, this.buildJoins),
+      params: this.params,
+    };
   }
 
   // Reset the query builder
   reset() {
     this.query = "";
     this.params = [];
+    this.joins = [];
+    this.selectedTables = [];
     return this;
   }
 }
@@ -434,7 +598,7 @@ async function example4() {
   console.log("Admins or moderators:", users);
 }
 
-// Example 5: Complex query .gination
+// Example 5: Complex query with pagination
 async function example5() {
   const qb = new QueryBuilder();
   const pagedUsers = await qb
@@ -458,82 +622,94 @@ function example6() {
     .where("price", "<", 100)
     .where("in_stock", "=", true);
 
-  const { query, params } = qb.toSQL();
+  const { query, params } = qb.getSQL();
   console.log("Query:", query);
   console.log("Params:", params);
-  // Output:
-  // Query: SELECT id, name FROM products WHERE price < ? AND in_stock = ?
-  // Params: [100, true]
 }
 
-// ============================================
-// EXPRESS ROUTE EXAMPLES
-// ============================================
+// Example 7: INNER JOIN - Users with their posts
+async function example7() {
+  const qb = new QueryBuilder();
+  const usersWithPosts = await qb
+    .select(["id", "name", "email"])
+    .from("users")
+    .join("INNER", "posts", "users.id", "posts.user_id")
+    .select(["id", "title", "content"])
+    .where("users.status", "=", "active")
+    .orderBy("posts.created_at", "DESC")
+    .execute();
 
-// In your Express app:
-// const express = require("express");
-// const app = express();
+  console.log("Users with posts:", usersWithPosts);
+}
 
-// // Get all users
-// app.get("/users", async (req, res) => {
-//   try {
-//     const qb = new QueryBuilder();
-//     const users = await qb.select().from("users").execute();
+// Example 8: LEFT JOIN - All users and their posts (if any)
+async function example8() {
+  const qb = new QueryBuilder();
+  const data = await qb
+    .multiSelect([
+      { table: "users", columns: ["id", "name", "email"] },
+      { table: "posts", columns: ["id", "title"] },
+    ])
+    .join("LEFT", "posts", "users.id", "posts.user_id")
+    .where("users.status", "=", "active")
+    .execute();
 
-//     res.json({ success: true, data: users });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
+  console.log("All users and their posts:", data);
+}
 
-// // Get user by ID
-// app.get("/users/:id", async (req, res) => {
-//   try {
-//     const qb = new QueryBuilder();
-//     const user = await qb
-//       .select()
-//       .from("users")
-//       .where("id", "=", req.params.id)
-//       .execute();
+// Example 9: Multiple JOINs - Users with posts and comments
+async function example9() {
+  const qb = new QueryBuilder();
+  const data = await qb
+    .multiSelect([
+      { table: "users", columns: ["id", "name", "email"] },
+      { table: "posts", columns: ["id", "title", "content"] },
+      { table: "comments", columns: ["id", "text", "created_at"] },
+    ])
+    .join("INNER", "posts", "users.id", "posts.user_id")
+    .join("LEFT", "comments", "posts.id", "comments.post_id")
+    .where("users.id", "=", 1)
+    .orderBy("posts.created_at", "DESC")
+    .execute();
 
-//     if (user.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "User not found" });
-//     }
+  console.log("User with posts and comments:", data);
+}
 
-//     res.json({ success: true, data: user[0] });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
+// Example 10: Complex multi-table query with filters
+async function example10() {
+  const qb = new QueryBuilder();
+  const data = await qb
+    .multiSelect([
+      { table: "users", columns: ["id", "name"] },
+      { table: "posts", columns: ["id", "title", "status"] },
+      { table: "comments", columns: ["id", "text"] },
+    ])
+    .join("INNER", "posts", "users.id", "posts.user_id")
+    .join("LEFT", "comments", "posts.id", "comments.post_id")
+    .where("posts.status", "=", "published")
+    .where("users.status", "=", "active")
+    .orderBy("posts.created_at", "DESC")
+    .limit(20)
+    .offset(0)
+    .execute();
 
-// // Search users with filters
-// app.get("/users/search", async (req, res) => {
-//   try {
-//     const { status, minAge, limit = 20, offset = 0 } = req.query;
+  console.log("Published posts with comments:", data);
+}
 
-//     const qb = new QueryBuilder();
-//     qb.select(["id", "name", "email", "age", "status"]).from("users");
+// Example 11: MultiSelect with WHERE IN
+async function example11() {
+  const qb = new QueryBuilder();
+  const data = await qb
+    .multiSelect([
+      { table: "users", columns: ["id", "name"] },
+      { table: "orders", columns: ["id", "total", "status"] },
+    ])
+    .join("INNER", "orders", "users.id", "orders.user_id")
+    .whereIn("orders.status", ["completed", "pending"])
+    .orderBy("orders.created_at", "DESC")
+    .execute();
 
-//     if (status) {
-//       qb.where("status", "=", status);
-//     }
-
-//     if (minAge) {
-//       qb.where("age", ">=", minAge);
-//     }
-
-//     const users = await qb
-//       .orderBy("created_at", "DESC")
-//       .limit(parseInt(limit))
-//       .offset(parseInt(offset))
-//       .execute();
-
-//     res.json({ success: true, data: users, count: users.length });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
+  console.log("Users with orders:", data);
+}
 
 module.exports = QueryBuilder;

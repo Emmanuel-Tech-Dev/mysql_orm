@@ -1,0 +1,26 @@
+{
+  "name": "Joins ",
+  "request": {
+    "type": "http",
+    "url": "{{BASE_URL}}/v1/joins_data",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "POST",
+    "queryParams": [],
+    "headers": [],
+    "body": "{\n   \"tbl1\" : \"halls\",\n    \"tbl2\" : \"rooms\"\n}",
+    "bodyContainer": {
+      "text": "{\n   \"tbl1\" : \"halls\",\n    \"tbl2\" : \"rooms\"\n}",
+      "form": [],
+      "multipartForm": []
+    },
+    "contentType": "application/json",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}
