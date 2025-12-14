@@ -495,10 +495,6 @@ class QueryBuilder {
     return this;
   }
 
-  /**
-   * Add aggregate function to existing SELECT
-   * Usage: .addAggregate("SUM", "amount", "total")
-   */
   addAggregate(func, column, alias = null) {
     const upperFunc = func.toUpperCase();
     const validFunctions = ["COUNT", "SUM", "AVG", "MIN", "MAX"];

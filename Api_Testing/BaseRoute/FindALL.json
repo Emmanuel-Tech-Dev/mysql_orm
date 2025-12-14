@@ -2,7 +2,7 @@
   "name": "FindALL",
   "request": {
     "type": "http",
-    "url": "https://app.requestly.io/echo",
+    "url": "{{BASE_URL}}/rooms",
     "scripts": {
       "preRequest": "",
       "postResponse": ""
@@ -10,11 +10,11 @@
     "method": "GET",
     "queryParams": [],
     "headers": [],
-    "body": null,
     "contentType": "text/plain",
     "auth": {
       "currentAuthType": "INHERIT",
       "authConfigStore": {}
-    }
+    },
+    "pathVariables": []
   }
 }

@@ -2,7 +2,7 @@
   "name": "Find With Query",
   "request": {
     "type": "http",
-    "url": "{{base_urll}}/rooms/query",
+    "url": "{{BASE_URL}}/rooms/query",
     "scripts": {
       "preRequest": "",
       "postResponse": ""
@@ -29,9 +29,9 @@
       }
     ],
     "headers": [],
-    "body": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n        }",
+    "body": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10,\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n}",
     "bodyContainer": {
-      "text": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n        }",
+      "text": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10,\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n}",
       "form": [],
       "multipartForm": []
     },

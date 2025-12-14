@@ -17,6 +17,8 @@ const validateTable = require("./core/middleware/validateTable");
 const AppError = require("./shared/helpers/AppError");
 const logger = require("./shared/helpers/logger");
 const BaseRoute = require("./route/baseRoute");
+const uploadServices = require("./core/lib/uploadServices");
+const { uploadSingle } = require("./core/config/multer");
 
 const app = express();
 const server = http.createServer(app);
@@ -157,6 +159,24 @@ app.post("/api/v1/joins_data", async (req, res) => {
       ip: req.ip,
     });
 
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "An error occurred while processing your request.",
+    });
+  }
+});
+
+app.post("/api/v1/upload", uploadSingle.array("files", 5), async (req, res) => {
+  try {
+    const file = req.files;
+
+    const results = await uploadServices.uploadMultipleFiles(file, "Testing");
+
+    res.json({
+      results,
+    });
+  } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message,

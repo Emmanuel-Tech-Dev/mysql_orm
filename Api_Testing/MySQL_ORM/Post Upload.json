@@ -1,13 +1,13 @@
 {
-  "name": "Delete Record",
+  "name": "Post Upload",
   "request": {
     "type": "http",
-    "url": "{{BASE_URL}}/api/rooms/12",
+    "url": "https://app.requestly.io/echo",
     "scripts": {
       "preRequest": "",
       "postResponse": ""
     },
-    "method": "DELETE",
+    "method": "GET",
     "queryParams": [],
     "headers": [],
     "body": null,
@@ -15,7 +15,6 @@
     "auth": {
       "currentAuthType": "INHERIT",
       "authConfigStore": {}
-    },
-    "pathVariables": []
+    }
   }
 }

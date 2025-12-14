@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const db = require("../dbConfig/config.js");
+
 const NodeCache = require("node-cache");
 const { v4: uuidv4 } = require("uuid");
 const otp = require("otp");
