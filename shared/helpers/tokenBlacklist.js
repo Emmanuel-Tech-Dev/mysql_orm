@@ -32,7 +32,7 @@ class TokenBlacklist {
   blacklistAccessToken(jti, decodedToken) {
     if (!jti) {
       console.error("Cannot blacklist access token: missing JTI");
-      return;
+      throw new Error("Cannot blacklist access token: missing JTI");
     }
 
     // Use the token's actual expiry time (15 minutes for your case)
@@ -51,7 +51,7 @@ class TokenBlacklist {
   blacklistRefreshToken(jti, expiresInSec = 7 * 24 * 60 * 60) {
     if (!jti) {
       console.error("Cannot blacklist refresh token: missing JTI");
-      return;
+      throw new Error("Cannot blacklist refresh token: missing JTI");
     }
 
     const expiry = Date.now() + expiresInSec * 1000;

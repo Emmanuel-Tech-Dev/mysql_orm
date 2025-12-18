@@ -282,12 +282,12 @@ class LoggerService {
   }
 }
 
-const loggerService = new LoggerService();
+const log = new LoggerService();
 
 // Auto-initialize on first import
-loggerService.initialize().catch((err) => {
+log.initialize().catch((err) => {
   console.error("Logger auto-initialization failed:", err);
 });
 
 // Export both the service and error codes
-module.exports = loggerService;
+module.exports = log;

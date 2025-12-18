@@ -296,5 +296,10 @@ const utils = {
 
     await transpoter.sendMail(mailOptions);
   },
+  getFileType(mimetype) {
+    if (mimetype.startsWith("image/")) return "image";
+    if (mimetype.startsWith("video/")) return "video";
+    return "unknown";
+  },
 };
 module.exports = utils;

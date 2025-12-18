@@ -5,7 +5,7 @@ class CacheManager {
   constructor(options = {}) {
     this.cache = new LRUCache({
       max: options.maxItems || 1000,
-      ttl: options.ttl || 1000 * 60 * 15, // 15 minutes default
+      ttl: options?.ttl || 1000 * 60 * 15, // 15 minutes default
       updateAgeOnGet: true,
       updateAgeOnHas: true,
     });
@@ -20,11 +20,14 @@ class CacheManager {
   }
 
   set(key, value, customTtl) {
-    const ttl = customTtl || this.cache.ttl;
+    const ttl = customTtl;
     const now = Date.now();
 
-    // Store in cache
-    this.cache.set(key, value, { ttl });
+    if (typeof ttl === "number" && ttl > 0) {
+      this.cache.set(key, value, { ttl });
+    } else {
+      this.cache.set(key, value);
+    }
 
     // Track access
     this.accessTracker.set(key, {

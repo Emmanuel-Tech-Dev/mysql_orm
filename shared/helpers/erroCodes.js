@@ -13,6 +13,7 @@ const ERROR_CODES = Object.freeze({
   ERR_INVALID_CREDENTIALS: { status: 401, message: "Invalid credentials" },
   ERR_TOKEN_EXPIRED: { status: 401, message: "Token expired" },
   ERR_TOKEN_INVALID: { status: 401, message: "Invalid token" },
+  ERR_AUTH_USER_INVALID: { status: 401, message: "Auth user not found" },
   ERR_AUTHENTICATION_REQUIRED: {
     status: 401,
     message: "Authentication required",

@@ -19,6 +19,9 @@ const logger = require("./shared/helpers/logger");
 const BaseRoute = require("./route/baseRoute");
 const uploadServices = require("./core/lib/uploadServices");
 const { uploadSingle } = require("./core/config/multer");
+const authMiddleWare = require("./core/middleware/authMiddleWare");
+const systemSettings = require("./core/lib/systemSettings");
+const SettingsManager = require("./core/lib/systemSettings");
 
 const app = express();
 const server = http.createServer(app);
@@ -118,6 +121,8 @@ app.use((req, res, next) => {
   next();
 });
 
+//app.use(authMiddleWare);
+
 new BaseRoute(app);
 
 app.get("/", async (req, res) => {
@@ -185,7 +190,38 @@ app.post("/api/v1/upload", uploadSingle.array("files", 5), async (req, res) => {
   }
 });
 
-// Remove conn.connect() and conn.end() entirely
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.get("/api/v1/cache/:key", async (req, res) => {
+  try {
+    const result = await req.app.locals.settings.get(req.params.key);
+
+    // console.log(result);
+
+    return res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "An error occurred while processing your request.",
+    });
+  }
 });
+
+async function startServer() {
+  try {
+    const settings = new SettingsManager();
+    await settings.preloadAll();
+
+    app.locals.settings = settings;
+
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.log("Failed to load settings and start server", error);
+  }
+}
+
+startServer();

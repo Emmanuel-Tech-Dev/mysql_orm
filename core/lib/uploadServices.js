@@ -1,4 +1,8 @@
-const { uploadFromBuffer, uploadFromPath } = require("../config/cloudinary");
+const {
+  uploadFromBuffer,
+  uploadFromPath,
+  deleteFile,
+} = require("../config/cloudinary");
 const fs = require("fs");
 
 class UploadService {
@@ -9,14 +13,7 @@ class UploadService {
       const isVideo = file.mimetype.startsWith("video/");
 
       if (!isImage && !isVideo) {
-        const response = {
-          success: false,
-          status: "error",
-          statusCode: 400,
-          message: "Only image and video files are supported",
-        };
-        logger.error(response);
-        return response;
+        throw new Error("Only image and video files are supported");
       }
 
       const options = {
@@ -47,15 +44,15 @@ class UploadService {
         version: result.version, // Version number changes on update
       };
 
-      const response = {
-        success: true,
-        status: "success",
-        statusCode: 200,
-        message: "Operation successful!",
-        data: data,
-      };
+      // const response = {
+      //   success: true,
+      //   status: "success",
+      //   statusCode: 200,
+      //   message: "Operation successful!",
+      //   data: data,
+      // };
 
-      return response;
+      return data;
     } catch (error) {
       // Clean up temporary file on error
       if (file.path && fs.existsSync(file.path)) {
@@ -106,25 +103,13 @@ class UploadService {
         version: result.version, // Version number changes on update
       };
 
-      const response = {
-        success: true,
-        status: "success",
-        statusCode: 200,
-        message: "Operation successful!",
-        data,
-      };
-
-      return response;
+      return data;
     } catch (error) {
       const response = {
-        success: false,
-        status: "error",
-        statusCode: 500,
         message: "Operation failed!",
         errorMessage: error.message,
       };
 
-      logger.error({ ...response, errorDetails: error });
       return response;
     }
   }
@@ -138,28 +123,13 @@ class UploadService {
       // Upload new file
       const result = await this.uploadSingleFile(file, folder);
 
-      const response = {
-        success: true,
-        status: "success",
-        statusCode: 200,
-        message: "Operation successful!",
-        data: result,
-      };
-
-      if (result.length > 0) {
-        logger.info(response);
-      }
-      return response;
+      return result;
     } catch (error) {
       const response = {
-        success: false,
-        status: "error",
-        statusCode: 500,
         message: "Operation failed!",
         errorMessage: error.message,
       };
 
-      logger.error({ ...response, errorDetails: error });
       return response;
     }
   }
@@ -172,19 +142,9 @@ class UploadService {
       );
       const results = await Promise.all(uploadPromises);
 
-      const response = {
-        success: true,
-
-        message: "Operation successful!",
-        data: results,
-      };
-
-      return response;
+      return results;
     } catch (error) {
       const response = {
-        success: false,
-        status: "error",
-        statusCode: 500,
         message: "Operation failed!",
         errorMessage: error.message,
       };
@@ -197,37 +157,25 @@ class UploadService {
   // Delete file from Cloudinary
   async deleteFile(publicId) {
     try {
-      const result = await this.deleteFile(publicId);
+      const result = await deleteFile(publicId);
 
       const response = {
-        success: true,
-        status: "success",
-        statusCode: 200,
         message: "Operation successful!",
         // data: results,
       };
 
-      return response;
+      return result;
     } catch (error) {
       const response = {
-        success: false,
-        status: "error",
-        statusCode: 500,
         message: "Operation failed!",
         errorMessage: error.message,
       };
 
-      logger.error({ ...response, errorDetails: error });
       return response;
     }
   }
 
   // Get file type from mimetype
-  getFileType(mimetype) {
-    if (mimetype.startsWith("image/")) return "image";
-    if (mimetype.startsWith("video/")) return "video";
-    return "unknown";
-  }
 }
 
 module.exports = new UploadService();

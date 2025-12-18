@@ -255,7 +255,7 @@ class QueryBuilder {
     return this;
   }
   setSql(sql) {
-    console.log("Setting SQL:", sql);
+    // console.log("Setting SQL:", sql);
     this.query = sql;
     return this;
   }
