@@ -172,6 +172,10 @@ class SettingsManager {
     }
   }
 
+  getAll(key) {
+    const settings = this.cache.get("settings:");
+  }
+
   getAnalytics() {
     return {
       cacheSize: this.cache.cache.size,

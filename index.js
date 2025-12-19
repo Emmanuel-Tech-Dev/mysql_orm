@@ -1,4 +1,5 @@
 const express = require("express");
+require("express-async-errors"); // This handles async errors automatically!
 const responseTime = require("response-time");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -22,6 +23,7 @@ const { uploadSingle } = require("./core/config/multer");
 const authMiddleWare = require("./core/middleware/authMiddleWare");
 const systemSettings = require("./core/lib/systemSettings");
 const SettingsManager = require("./core/lib/systemSettings");
+const errorHandler = require("./core/middleware/errorHandler");
 
 const app = express();
 const server = http.createServer(app);
@@ -137,39 +139,20 @@ app.get("/", async (req, res) => {
 });
 
 app.post("/api/v1/joins_data", async (req, res) => {
-  try {
-    const tableName = req.params.resources;
-    const params = req.query;
+  const tableName = req.params.resources;
+  const params = req.query;
 
-    const { tbl1, tbl2 } = req.body;
-    const data = await new Model()
-      .multiSelect([
-        { table: "halls", columns: ["id", "hall_name"] },
-        { table: "rooms", columns: [] }, // No room columns, just for joining
-      ])
-      .addAggregate("SUM", "rooms.room_capacity", "total_capacity") // Won't work - need custom approach
-      .join("INNER", "rooms", "halls.id", "rooms.hall_id")
-      .groupBy(["halls.id", "halls.hall_name"])
-      .execute();
-    res.json({ success: true, data });
-  } catch (error) {
-    logger.access("ERR_BAD_REQUEST", {
-      error: {
-        code: error.code,
-        message: error.message,
-        status: 500,
-      },
-      route: req.originalUrl,
-      method: req.method,
-      ip: req.ip,
-    });
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "An error occurred while processing your request.",
-    });
-  }
+  const { tbl1, tbl2 } = req.body;
+  const data = await new Model()
+    .multiSelect([
+      { table: tbl1, columns: ["id", "hall_name"] },
+      { table: tbl2, columns: [] }, // No room columns, just for joining
+    ])
+    .addAggregate("SUM", "rooms.room_capacity", "total_capacity") // Won't work - need custom approach
+    .join("INNER", "rooms", "halls.id", "rooms.hall_id")
+    .groupBy(["halls.id", "halls.hall_name"])
+    .execute();
+  res.json({ success: true, data });
 });
 
 app.post("/api/v1/upload", uploadSingle.array("files", 5), async (req, res) => {
@@ -190,11 +173,10 @@ app.post("/api/v1/upload", uploadSingle.array("files", 5), async (req, res) => {
   }
 });
 
-app.get("/api/v1/cache/:key", async (req, res) => {
+app.get("/api/v1/cache", async (req, res) => {
   try {
-    const result = await req.app.locals.settings.get(req.params.key);
-
-    // console.log(result);
+    const settings = new SettingsManager();
+    const result = settings.getAnalytics();
 
     return res.json({
       success: true,
@@ -207,6 +189,23 @@ app.get("/api/v1/cache/:key", async (req, res) => {
       message: "An error occurred while processing your request.",
     });
   }
+});
+
+app.use(errorHandler(logger));
+
+// ==========================================
+// GRACEFUL SHUTDOWN
+// ==========================================
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  await logger.close();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT signal received: closing HTTP server");
+  await logger.close();
+  process.exit(0);
 });
 
 async function startServer() {

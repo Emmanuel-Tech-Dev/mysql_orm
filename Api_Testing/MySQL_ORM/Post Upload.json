@@ -2,52 +2,14 @@
   "name": "Post Upload",
   "request": {
     "type": "http",
-    "url": "{{BASE_URL}}/v1/upload",
+    "url": "{{BASE_URL}}/v1/cache",
     "scripts": {
       "preRequest": "",
       "postResponse": ""
     },
-    "method": "POST",
+    "method": "GET",
     "queryParams": [],
     "headers": [],
-    "body": [
-      {
-        "id": 1765741837117,
-        "key": "files",
-        "value": [
-          {
-            "id": "Screenshot 2025-12-06 200522.png-1765741857783",
-            "name": "Screenshot 2025-12-06 200522.png",
-            "path": "C:\\Users\\emman\\Downloads\\Screenshot 2025-12-06 200522.png",
-            "size": 80016,
-            "source": "desktop"
-          },
-          {
-            "id": "code32.png-1765742615855",
-            "name": "code32.png",
-            "path": "C:\\Users\\emman\\Downloads\\code32.png",
-            "size": 124902,
-            "source": "desktop"
-          },
-          {
-            "id": "code33.png-1765742615855",
-            "name": "code33.png",
-            "path": "C:\\Users\\emman\\Downloads\\code33.png",
-            "size": 138670,
-            "source": "desktop"
-          },
-          {
-            "id": "code34.png-1765742615855",
-            "name": "code34.png",
-            "path": "C:\\Users\\emman\\Downloads\\code34.png",
-            "size": 117561,
-            "source": "desktop"
-          }
-        ],
-        "isEnabled": true,
-        "type": "file"
-      }
-    ],
     "bodyContainer": {
       "text": "",
       "form": [],
@@ -90,7 +52,7 @@
         }
       ]
     },
-    "contentType": "multipart/form-data",
+    "contentType": "text/plain",
     "auth": {
       "currentAuthType": "INHERIT",
       "authConfigStore": {}
