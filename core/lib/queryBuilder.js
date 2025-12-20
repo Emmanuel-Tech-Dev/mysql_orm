@@ -541,6 +541,93 @@ class QueryBuilder {
     this.selectedTables = [];
     return this;
   }
+
+  fullTextSearch(table, columns, searchTerm, mode = "NATURAL LANGUAGE") {
+    // Validate inputs
+    if (!table || !columns || !searchTerm) {
+      throw new Error(
+        "Table, columns, and searchTerm are required for fullTextSearch"
+      );
+    }
+
+    // Handle columns - can be string or array
+    let columnsList;
+    if (Array.isArray(columns)) {
+      if (columns.length === 0) {
+        throw new Error("Columns array cannot be empty");
+      }
+      columnsList = columns.join(", ");
+    } else {
+      columnsList = columns;
+    }
+
+    // Validate and format search mode
+    const validModes = ["NATURAL LANGUAGE", "BOOLEAN", "QUERY EXPANSION"];
+    const upperMode = mode.toUpperCase();
+
+    let searchMode;
+    if (upperMode === "NATURAL LANGUAGE" || upperMode === "NATURAL") {
+      searchMode = "NATURAL LANGUAGE MODE";
+    } else if (upperMode === "BOOLEAN") {
+      searchMode = "BOOLEAN MODE";
+    } else if (upperMode === "QUERY EXPANSION" || upperMode === "EXPANSION") {
+      searchMode = "WITH QUERY EXPANSION";
+    } else {
+      throw new Error(
+        `Invalid search mode: ${mode}. Must be one of: ${validModes.join(", ")}`
+      );
+    }
+
+    // Build the query
+    this.query = `SELECT * FROM ${table} WHERE MATCH(${columnsList}) AGAINST(? IN ${searchMode})`;
+
+    // Add the search term as a parameter (prevents SQL injection)
+    this.params.push(searchTerm);
+
+    return this;
+  }
+
+  /**
+   * Full-Text Search with custom SELECT columns
+   * Includes relevance score
+   */
+  fullTextSearchWithScore(
+    table,
+    columns,
+    searchTerm,
+    mode = "NATURAL LANGUAGE"
+  ) {
+    if (!table || !columns || !searchTerm) {
+      throw new Error("Table, columns, and searchTerm are required");
+    }
+
+    let columnsList;
+    if (Array.isArray(columns)) {
+      columnsList = columns.join(", ");
+    } else {
+      columnsList = columns;
+    }
+
+    const upperMode = mode.toUpperCase();
+    let searchMode;
+    if (upperMode === "NATURAL LANGUAGE" || upperMode === "NATURAL") {
+      searchMode = "NATURAL LANGUAGE MODE";
+    } else if (upperMode === "BOOLEAN") {
+      searchMode = "BOOLEAN MODE";
+    } else if (upperMode === "QUERY EXPANSION" || upperMode === "EXPANSION") {
+      searchMode = "WITH QUERY EXPANSION";
+    } else {
+      searchMode = "NATURAL LANGUAGE MODE";
+    }
+
+    // Include relevance score in results
+    this.query = `SELECT *, MATCH(${columnsList}) AGAINST(? IN ${searchMode}) AS relevance_score FROM ${table} WHERE MATCH(${columnsList}) AGAINST(? IN ${searchMode})`;
+
+    // Add search term twice (once for score, once for WHERE)
+    this.params.push(searchTerm, searchTerm);
+
+    return this;
+  }
 }
 
 // ============================================

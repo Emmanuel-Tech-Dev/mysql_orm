@@ -7,6 +7,7 @@ const errorHandler = (logger) => {
     err.status = err.status || "error";
     err.errorCode = err.errorCode || "ERR_INTERNAL_SERVER";
 
+    console.log(err);
     // Build context for logging
     const logContext = {
       url: req.originalUrl,

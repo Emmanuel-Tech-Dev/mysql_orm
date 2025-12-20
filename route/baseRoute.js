@@ -2,6 +2,7 @@ const validateTable = require("../core/middleware/validateTable");
 const BaseService = require("../core/lib/baseService");
 const loggerService = require("../shared/helpers/logger");
 const { response } = require("express");
+const AppError = require("../shared/helpers/AppError");
 
 class BaseRoute {
   constructor(app) {
@@ -19,219 +20,128 @@ class BaseRoute {
 
   findAll(app) {
     app.get("/api/:resources", validateTable, async (req, res) => {
-      try {
-        const service = new BaseService(req, res);
-        const data = await service.findAll();
-        res.status(200).json({
-          success: true,
-          message: "Operation Successful!",
-          data: data,
-        });
-      } catch (error) {
-        // loggerService.error(new Error, {
-        //   error: {
-        //     code: "ERR_BAD_REQUEST",
-        //     message: error.message,
-        //     status: 500,
-        //     stack: error.stack,
-        //   },
-        //   route: req.originalUrl,
-        //   method: req.method,
-        //   ip: req.ip,
-        // });
-        return res.status(500).json({
-          success: false,
-          message: "Something went wrong. Please try again later.",
-        });
-      }
+      const service = new BaseService(req, res);
+      const data = await service.findAll();
+      res.status(200).json({
+        status: "ok",
+        message: "Operation Successful!",
+        data: data,
+      });
     });
   }
 
   findWithParams(app) {
     // Support both GET and POST for query endpoint. GET is handy for URL-based filters
     app.post("/api/:resources/query", validateTable, async (req, res) => {
-      try {
-        const service = new BaseService(req, res);
+      const service = new BaseService(req, res);
 
-        const data = await service.findAllWithParams(req.body || {});
-        console.log(data);
+      const data = await service.findAllWithParams(req.body || {});
 
-        res.status(200).json({
-          success: true,
-          message: "Operation Successful!",
-          data: data,
-        });
-      } catch (error) {
-        // loggerService.error("ERROR_FINDING_WITH_PARAMS", { ... })
-        res.status(500).json({
-          success: false,
-          message: "Something went wrong. Please try again later.",
-        });
-      }
+      res.status(200).json({
+        status: "ok",
+        message: "Operation Successful!",
+        data: data,
+      });
     });
     // app.get("/api/:resources/query", validateTable, handler);
   }
 
   findOne(app) {
     app.get("/api/:resources/:id", async (req, res) => {
-      try {
-        const service = new BaseService();
-        const data = await service.findOne(req.params);
-        if (!data) {
-          res.status(404).json({
-            success: false,
-            message: "Operation failed!",
-            details: "Resources not found",
-          });
-        }
-
-        res.status(200).json({
-          success: true,
-          message: "Operation Successfull!",
-          // details: "Resource created successfully",
-          data: data,
-        });
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          message: "Operation failed!",
-          details: "Something went wrong. Please try again later",
-        });
+      const service = new BaseService();
+      const data = await service.findOne(req.params);
+      if (!data) {
+        throw new AppError("ERR_NOT_FOUND");
       }
+
+      res.status(200).json({
+        status: "ok",
+        message: "Operation Successfull!",
+        // details: "Resource created successfully",
+        data: data,
+      });
     });
   }
 
   create(app) {
     app.post("/api/:resources", validateTable, async (req, res) => {
-      try {
-        const service = new BaseService(req, res);
+      const service = new BaseService(req, res);
 
-        if (!req.body) {
-          // loggerService.smartError(new Error("Missing required fields"), {
-          //     status : 400,
+      if (!req.body) {
+        // loggerService.smartError(new Error("Missing required fields"), {
+        //     status : 400,
 
-          // })
-
-          res.status(400).json({
-            success: false,
-            message: "Mission required fields",
-          });
-        }
-        await service.create(req.body);
-
-        res.status(201).json({
-          success: true,
-          message: "Operation Successfull!",
-          details: "Resource created successfully",
-        });
-      } catch (error) {
-        loggerService.error("ERROR_CREATING_RECORDS", {
-          error: {
-            code: "ERR_BAD_REQUEST",
-            message: error.message,
-            status: 500,
-            stack: error.stack,
-          },
-          route: req.originalUrl,
-          method: req.method,
-          ip: req.ip,
-        });
-        res.status(500).json({
-          success: false,
-          message: "Something went wrong. Please try again later.",
-        });
+        // })
+        throw new AppError("ERR_BAD_REQUEST");
       }
+      await service.create(req.body);
+
+      res.status(201).json({
+        status: "ok",
+        message: "Operation Successfull!",
+        details: "Resource created successfully",
+      });
     });
   }
 
   bulkCreate(app) {
     app.post("/api/:resources/bulk", validateTable, async (req, res) => {
-      try {
-        const service = new BaseService(req, res);
-        // console.log(req.body, req.params.resources);
+      const service = new BaseService(req, res);
+      // console.log(req.body, req.params.resources);
 
-        await service.bulkCreate(req.body);
-
-        return res.status(201).json({
-          success: true,
-          message: "Operation Successfull!",
-          details: "Resource created successfully",
-        });
-      } catch (error) {
-        console.log(error);
-        res.status(500).json({
-          success: false,
-          message: "Operation failed!",
-          details: "Something went wrong. Please try again later",
-        });
+      if (!req.body) {
+        throw new AppError("ERR_BAD_REQUEST");
       }
+
+      await service.bulkCreate(req.body);
+
+      return res.status(201).json({
+        status: "ok",
+        message: "Operation Successfull!",
+        details: "Resource created successfully",
+      });
     });
   }
 
   update(app) {
     app.put("/api/:resources/:id", validateTable, async (req, res) => {
-      try {
-        const service = new BaseService(req, res);
+      const service = new BaseService(req, res);
 
-        const data = await service.findOne(req.params);
-        if (!data) {
-          res.status(404).json({
-            success: false,
-            message: "Operation failed!",
-            details: "Resources not found",
-          });
-        }
-
-        await service.updateRecord(req.body);
-
-        res.status(201).json({
-          success: true,
-          message: "Operation Successfull!",
-          details: "Resource updated successfully",
-        });
-      } catch (eror) {
-        res.status(500).json({
-          success: false,
-          message: "Operation failed!",
-          details: "Something went wrong. Please try again later",
-        });
+      const data = await service.findOne(req.params);
+      if (!data) {
+        throw new AppError("ERR_NOT_FOUND");
       }
+
+      await service.updateRecord(req.body);
+
+      res.status(201).json({
+        status: "ok",
+        message: "Operation Successfull!",
+        details: "Resource updated successfully",
+      });
     });
   }
   updateSome(app) {}
 
   delete(app) {
     app.delete("/api/:resources/:id", validateTable, async (req, res) => {
-      try {
-        // console.log(req.params);
-        // const {id} = req.params
-        // return;
-        const service = new BaseService(req, res);
+      // console.log(req.params);
+      // const {id} = req.params
+      // return;
+      const service = new BaseService(req, res);
 
-        const data = await service.findOne(req.params);
-        if (!data) {
-          res.status(404).json({
-            success: false,
-            message: "Operation failed!",
-            details: "Resources not found",
-          });
-        }
-
-        await service.deleteRecord(req.params);
-
-        res.status(201).json({
-          success: true,
-          message: "Operation Successfull!",
-          details: "Resource deleted successfully",
-        });
-      } catch (error) {
-        console.log(error);
-        res.status(500).json({
-          success: false,
-          message: "Operation failed!",
-          details: "Something went wrong. Please try again later",
-        });
+      const data = await service.findOne(req.params);
+      if (!data) {
+        throw new AppError("ERR_NOT_FOUND");
       }
+
+      await service.deleteRecord(req.params);
+
+      res.status(201).json({
+        status: "ok",
+        message: "Operation Successfull!",
+        details: "Resource deleted successfully",
+      });
     });
   }
 }

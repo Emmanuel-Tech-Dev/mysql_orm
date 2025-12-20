@@ -10,28 +10,16 @@
     "method": "POST",
     "queryParams": [
       {
-        "id": 0.5425742153503921,
+        "id": 0.14808362309786527,
         "key": "search",
-        "value": "multiple",
-        "isEnabled": true
-      },
-      {
-        "id": 0.6864883719967572,
-        "key": "available_spots",
-        "value": "3",
-        "isEnabled": true
-      },
-      {
-        "id": 0.9502476258656452,
-        "key": "room_capacity",
-        "value": "4",
+        "value": "OW0",
         "isEnabled": true
       }
     ],
     "headers": [],
-    "body": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10,\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n}",
+    "body": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \"fullTextSearch\": {\n        \"enabled\": true,\n        \"table\": \"rooms\",\n        \"columns\": [\"room_number\" , \"room_type\"],\n           \"withScore\" : false\n      },\n          \"defaultLimit\": 10\n           \n}\n\n\n      ",
     "bodyContainer": {
-      "text": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \n          \"defaultLimit\": 10,\n           \"paginate\" : {\n              \"page\" : 1,\n              \"limit\" : 10\n           }\n}",
+      "text": "{\n          \"searchable\": [\"room_number\" , \"room_type\"],\n          \"filterable\": [\"available_spots\", \"room_price\", \"room_capacity\"],\n          \"sortable\": [\"id\", \"created_at\"],\n         \"fullTextSearch\": {\n        \"enabled\": true,\n        \"table\": \"rooms\",\n        \"columns\": [\"room_number\" , \"room_type\"],\n           \"withScore\" : false\n      },\n          \"defaultLimit\": 10\n           \n}\n\n\n      ",
       "form": [],
       "multipartForm": []
     },

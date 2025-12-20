@@ -191,6 +191,12 @@ app.get("/api/v1/cache", async (req, res) => {
   }
 });
 
+app.all("*", (req, res, next) => {
+  next(
+    new AppError("ERR_ENDPOINT_NOT_FOUND", `Route ${req.originalUrl} not found`)
+  );
+});
+
 app.use(errorHandler(logger));
 
 // ==========================================

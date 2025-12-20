@@ -20,7 +20,7 @@ class BaseService {
   async findAllWithParams(options = {}) {
     // console.log(options);
     const { resources } = this.request.params;
-    console.log(this.request.params);
+
     const { paginate } = options;
 
     const res = await new Model()

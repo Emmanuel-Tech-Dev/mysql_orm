@@ -48,30 +48,81 @@ class Model extends QueryBuilder {
       sortable = [],
       maxLimit = 100,
       defaultLimit = 10,
+      fullTextSearch = null, // { enabled: true, columns: ['title', 'content'], table: 'articles' }
     } = options;
 
-    // console.log(options);
-    // Handle search (LIKE queries)
-    if (queryParams.search && searchable.length > 0) {
-      const searchValue = `%${queryParams.search}%`;
-      const searchConditions = searchable.map((column) => ({
-        column,
-        operator: "LIKE",
-        value: searchValue,
-      }));
-      this.where(searchConditions, "LIKE", "OR");
+    // SEARCH HANDLING
+
+    if (queryParams.search && queryParams.search.trim() !== "") {
+      const searchTerm = queryParams.search.trim();
+
+      // Option 1: Use Full-Text Search if configured
+      if (queryParams.search && queryParams.search.trim() !== "") {
+        const searchTerm = queryParams.search.trim();
+
+        // Option 1: Use Full-Text Search if configured
+        if (
+          fullTextSearch?.enabled &&
+          fullTextSearch?.columns?.length > 0 &&
+          fullTextSearch?.table
+        ) {
+          const mode = fullTextSearch.mode || "NATURAL LANGUAGE";
+          const withScore = fullTextSearch.withScore !== false; // Default true
+
+          console.log(`✓ Using Full-Text Search on ${fullTextSearch.table}`);
+
+          if (withScore) {
+            this.fullTextSearchWithScore(
+              fullTextSearch.table,
+              fullTextSearch.columns,
+              searchTerm,
+              mode
+            );
+
+            // Auto-sort by relevance ONLY if using score AND no custom sort
+            if (!queryParams.sort_by) {
+              this.orderBy("id", "DESC");
+            }
+          } else {
+            this.fullTextSearch(
+              fullTextSearch.table,
+              fullTextSearch.columns,
+              searchTerm,
+              mode
+            );
+            // No relevance_score column when withScore is false
+          }
+        }
+        // Option 2: Fallback to LIKE search if searchable columns provided
+        else if (searchable.length > 0) {
+          console.log("✓ Using LIKE search (no full-text index)");
+          const searchValue = `%${searchTerm}%`;
+          const searchConditions = searchable.map((column) => ({
+            column,
+            operator: "LIKE",
+            value: searchValue,
+          }));
+          this.where(searchConditions, "LIKE", "OR");
+        }
+        // Option 3: No search method available
+        else {
+          console.warn(
+            "⚠ Search requested but no fullTextSearch config or searchable columns provided"
+          );
+        }
+      }
     }
 
-    // Handle filters (exact match)
-    //useCase: ?column_name=value&column_name2=value
+    // FILTERS (exact match)
+
     filterable.forEach((column) => {
       if (queryParams[column] !== undefined && queryParams[column] !== "") {
         this.where(column, "=", queryParams[column]);
-        console.log(queryParams, column);
       }
     });
 
-    // Handle special operators (column_min, column_max, etc.)
+    // SPECIAL OPERATORS
+
     Object.keys(queryParams).forEach((key) => {
       // Handle min/max range filters
       if (key.endsWith("_min")) {
@@ -114,18 +165,21 @@ class Model extends QueryBuilder {
       }
     });
 
-    // Handle sorting
+    // SORTING
+
     if (queryParams.sort_by) {
       const sortColumn = queryParams.sort_by;
       const sortOrder =
         queryParams.sort_order?.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
-      if (sortable.includes(sortColumn)) {
+      // Allow sorting by relevance_score if full-text search is active
+      if (sortColumn === "relevance_score" || sortable.includes(sortColumn)) {
         this.orderBy(sortColumn, sortOrder);
       }
     }
 
-    // Handle pagination
+    // PAGINATION
+
     const limit = Math.min(
       parseInt(queryParams.limit) || defaultLimit,
       maxLimit
@@ -134,17 +188,11 @@ class Model extends QueryBuilder {
     const page = parseInt(queryParams.page);
 
     if (page && page > 0) {
-      // If page is provided, calculate offset from page number
-      //   this.limit(limit);
-      //   this.offset((page - 1) * limit);
       this._paginate = { page, limit };
+    } else if (offset > 0) {
+      this._paginate = { offset, limit };
     } else {
-      // Use direct offset
-      //   this.limit(limit);
-      if (offset > 0) {
-        // this.offset(offset);
-        this._paginate = { offset, limit };
-      }
+      this._paginate = { page: 1, limit };
     }
 
     return this;
