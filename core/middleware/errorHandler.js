@@ -7,7 +7,6 @@ const errorHandler = (logger) => {
     err.status = err.status || "error";
     err.errorCode = err.errorCode || "ERR_INTERNAL_SERVER";
 
-    console.log(err);
     // Build context for logging
     const logContext = {
       url: req.originalUrl,
@@ -23,7 +22,7 @@ const errorHandler = (logger) => {
 
     // Use smartError for operational errors, regular error for unexpected ones
     if (err.isOperational) {
-      logger.smartError(err, logContext);
+      logger.smartError(err, logContext, err?.metadata?.level);
     } else {
       // Log unexpected errors with full stack trace
       logger.error(err, {

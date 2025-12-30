@@ -3,10 +3,15 @@ const BaseService = require("../core/lib/baseService");
 const loggerService = require("../shared/helpers/logger");
 const { response } = require("express");
 const AppError = require("../shared/helpers/AppError");
+const authMiddleWare = require("../core/middleware/authMiddleWare");
+const authorization = require("../core/middleware/authorization");
 
 class BaseRoute {
   constructor(app) {
     this.app = app;
+
+    this.init(app);
+
     this.findAll(app);
     this.findWithParams(app);
     this.findOne(app);
@@ -15,7 +20,13 @@ class BaseRoute {
     this.update(app);
     this.updateSome(app);
     this.delete(app);
+
     return this;
+  }
+
+  async init(app) {
+    app.use(authMiddleWare);
+    app.use(authorization);
   }
 
   findAll(app) {

@@ -1,6 +1,6 @@
-# 📘 MySQL ORM - Node.js Backend Framework
+## 📘 MySQL ORM - Node.js Backend Framework
 
-_A powerful and scalable Node.js backend framework that eliminates manual SQL queries. Build RESTful APIs with a custom ORM that handles complex database operations effortlessly. Simply configure your database connection in the `.env` file and start building!_
+Lightweight MySQL ORM / API starter built with Express and `mysql2`. This repo provides a modular Node.js/Express backend using a promise-based MySQL pool, organized services, middleware, and helper utilities. It includes file upload helpers (multer + Cloudinary), basic auth utilities, and a small ORM-style `Model` used across routes.
 
 ---
 

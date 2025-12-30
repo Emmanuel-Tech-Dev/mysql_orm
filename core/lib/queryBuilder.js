@@ -675,6 +675,16 @@ async function example4() {
     .select(["id", "name", "role"])
     .from("users")
     .where("role", "=", "admin")
+    .where(
+      [
+        { column: "age", operator: ">=", value: 18 },
+        { column: "status", operator: "=", value: "active" },
+        { column: "balance", operator: ">", value: 100 },
+      ],
+      "=",
+      "AND"
+    )
+    // SQL: WHERE (age >= ? AND status = ? AND balance > ?)
     .orWhere("role", "=", "moderator")
     .execute();
 

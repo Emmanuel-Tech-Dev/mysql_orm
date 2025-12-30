@@ -8,10 +8,11 @@ const ERROR_CODES = Object.freeze({
     message: "Missing required field",
   },
   ERR_INVALID_FORMAT: { status: 400, message: "Invalid format" },
-
+  ERR_RATE_LIMIT_EXCEEDED: { status: 429, message: "Rate limit exceeded" }, // Server Errors (5xx)
   ERR_UNAUTHORIZED: { status: 401, message: "Unauthorized" },
   ERR_INVALID_CREDENTIALS: { status: 401, message: "Invalid credentials" },
   ERR_TOKEN_EXPIRED: { status: 401, message: "Token expired" },
+  ERR_TOKEN_REVOKED: { status: 401, message: "Token revoked or blacklisted" },
   ERR_TOKEN_INVALID: { status: 401, message: "Invalid token" },
   ERR_AUTH_USER_INVALID: { status: 401, message: "Auth user not found" },
   ERR_AUTHENTICATION_REQUIRED: {
@@ -28,7 +29,11 @@ const ERROR_CODES = Object.freeze({
   ERR_ACCOUNT_SUSPENDED: { status: 403, message: "Account suspended" },
 
   ERR_NOT_FOUND: { status: 404, message: "Resource not found" },
+  ERR_NOT_FOUND: { status: 404, message: "Resource not found" },
   ERR_USER_NOT_FOUND: { status: 404, message: "User not found" },
+
+  ERR_NO_RESOURCES: { status: 403, message: "No resources available" },
+
   ERR_RECORD_NOT_FOUND: { status: 404, message: "Record not found" },
   ERR_ENDPOINT_NOT_FOUND: { status: 404, message: "Endpoint not found" },
 

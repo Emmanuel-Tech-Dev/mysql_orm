@@ -7,6 +7,17 @@ class OTPService {
     this.rateLimitStore = new Map();
     this.maxAttempts = 5;
     this.lockoutDuration = 15 * 60 * 1000;
+    this.algorithm = "aes-256-cbc";
+
+    // ✅ Ensure encryption key is exactly 32 bytes
+    this.encryptionKey = this._prepareEncryptionKey(process.env.ENCRYPTION_KEY);
+  }
+
+  /**
+   * Prepare encryption key to be exactly 32 bytes
+   */
+  _prepareEncryptionKey(key) {
+    return crypto.createHash("sha256").update(key).digest();
   }
 
   generateOtpSecret() {
@@ -135,7 +146,7 @@ class OTPService {
   async generateQrCode(
     secret,
     accountName,
-    serviceName = process.env.SERVICE_NAME
+    serviceName = process.env.SERVICE_NAME || "Hotel System"
   ) {
     try {
       if (!secret || !accountName) {
@@ -148,7 +159,7 @@ class OTPService {
         accountName
       )}?secret=${secret}&issuer=${encodeURIComponent(serviceName)}`;
 
-      const qrCodeDataUrl = qrcode.toDataURL(otpauthUrl, {
+      const qrCodeDataUrl = await qrcode.toDataURL(otpauthUrl, {
         errorCorrectionLevel: "M",
         type: "image/png",
         quality: 0.92,
@@ -166,35 +177,76 @@ class OTPService {
     }
   }
 
-  encryptSecret(secret, encryptionKey) {
+  /**
+   * ✅ FIXED: Encrypt secret using createCipheriv (not createCipher)
+   * Returns format: "IV:EncryptedData"
+   */
+  encryptSecret(secret, encryptionKey = null) {
     try {
-      if (!secret || !encryptionKey) {
-        throw new Error("Secret and encryption key are required");
+      if (!secret) {
+        throw new Error("Secret is required");
       }
 
+      // Use provided key or default
+      const key = encryptionKey
+        ? this._prepareEncryptionKey(encryptionKey)
+        : this.encryptionKey;
+
+      // ✅ Generate random IV
       const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipher("aes-256-cbc", encryptionKey);
+
+      // ✅ Use createCipheriv instead of createCipher
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv);
 
       let encrypted = cipher.update(secret, "utf8", "hex");
       encrypted += cipher.final("hex");
 
-      return {
-        encryptedSecret: encrypted,
-        iv: iv.toString("hex"),
-      };
+      // ✅ Return IV + encrypted data in one string
+      return iv.toString("hex") + ":" + encrypted;
     } catch (error) {
       console.error("Error encrypting secret:", error);
       throw new Error("Unable to encrypt secret");
     }
   }
 
-  decryptSecret(encryptedSecret, iv, encryptionKey) {
+  /**
+   * ✅ FIXED: Decrypt secret using createDecipheriv (not createDecipher)
+   * Accepts format: "IV:EncryptedData" OR separate iv and encryptedSecret
+   */
+  decryptSecret(encryptedData, ivOrKey = null, encryptionKey = null) {
     try {
-      if (!encryptedSecret || !iv || !encryptionKey) {
-        throw new Error("All parameters are required for decryption");
+      let iv, encryptedSecret, key;
+
+      // ✅ Handle two formats:
+      // Format 1: decryptSecret("IV:EncryptedData")
+      // Format 2: decryptSecret(encryptedSecret, iv, encryptionKey)
+
+      if (encryptedData.includes(":")) {
+        // Format 1: Combined "IV:EncryptedData"
+        const parts = encryptedData.split(":");
+        if (parts.length !== 2) {
+          throw new Error("Invalid encrypted data format");
+        }
+        iv = Buffer.from(parts[0], "hex");
+        encryptedSecret = parts[1];
+        key = ivOrKey
+          ? this._prepareEncryptionKey(ivOrKey)
+          : this.encryptionKey;
+      } else {
+        // Format 2: Separate parameters
+        encryptedSecret = encryptedData;
+        iv = Buffer.from(ivOrKey, "hex");
+        key = encryptionKey
+          ? this._prepareEncryptionKey(encryptionKey)
+          : this.encryptionKey;
       }
 
-      const decipher = crypto.createDecipher("aes-256-cbc", encryptionKey);
+      if (!iv || !encryptedSecret) {
+        throw new Error("Invalid parameters for decryption");
+      }
+
+      // ✅ Use createDecipheriv instead of createDecipher
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
 
       let decrypted = decipher.update(encryptedSecret, "hex", "utf8");
       decrypted += decipher.final("utf8");
@@ -273,39 +325,5 @@ class OTPService {
     }
   }
 }
-
-// const otpService = new OTPService();
-
-// async function setupOTP(userId, userEmail) {
-//   try {
-//     const secret = otpService.generateOtpSecret();
-//     const qrCode = await otpService.generateQrCode(secret, userEmail, "MyApp");
-
-//     const encryptionKey = process.env.OTP_ENCRYPTION_KEY;
-//     const encryptedData = otpService.encryptSecret(secret, encryptionKey);
-
-//     return {
-//       secret,
-//       qrCode,
-//       encryptedData,
-//     };
-//   } catch (error) {
-//     console.error("Setup failed:", error);
-//     throw error;
-//   }
-// }
-
-// function verifyLoginOTP(userId, inputCode, encryptedSecret, iv) {
-//   try {
-//     const encryptionKey = process.env.OTP_ENCRYPTION_KEY;
-//     const secret = otpService.decryptSecret(encryptedSecret, iv, encryptionKey);
-
-//     const result = otpService.verifyOtp(inputCode, secret, userId);
-//     return result;
-//   } catch (error) {
-//     console.error("Verification failed:", error);
-//     return { isValid: false, error: "Verification failed" };
-//   }
-// }
 
 module.exports = new OTPService();

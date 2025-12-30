@@ -37,7 +37,7 @@ class SettingsManager {
 
       return defaultValue;
     } catch (error) {
-      console.log(`❌ Error getting setting ${key}:`, error.message);
+      console.log(` Error getting setting ${key}:`, error.message);
       return defaultValue;
     }
   }
@@ -136,7 +136,7 @@ class SettingsManager {
   }
 
   async preloadAll() {
-    console.log("🔄 Preloading all settings into cache...");
+    console.log("Preloading all settings into cache...");
 
     try {
       const rows = await new Model()
@@ -160,14 +160,14 @@ class SettingsManager {
       }
 
       this.isPreloaded = true;
-      console.log(`✅ Preloaded ${count} settings into cache`);
+      console.log(` Preloaded ${count} settings into cache`);
       console.log(
-        `💾 Settings cached FOREVER (until server restart or admin update)`
+        ` Settings cached FOREVER (until server restart or admin update)`
       );
 
       return count;
     } catch (error) {
-      console.error("❌ Error preloading settings:", error);
+      console.error(" Error preloading settings:", error);
       throw error;
     }
   }
@@ -185,25 +185,25 @@ class SettingsManager {
   }
 }
 
-async function systemSettings(tableName) {
-  try {
-    const res = await new Model().select(["*"], tableName).execute();
-    if (res?.length == 0) {
-      throw new Error("System setup up failed");
-    }
-    cache.set("settings:all", res, null);
-  } catch (error) {
-    console.log(error);
-    throw new Error("Failed to get system settings configuration");
-  }
-}
+// async function systemSettings(tableName) {
+//   try {
+//     const res = await new Model().select(["*"], tableName).execute();
+//     if (res?.length == 0) {
+//       throw new Error("System setup up failed");
+//     }
+//     cache.set("settings:all", res, null);
+//   } catch (error) {
+//     console.log(error);
+//     throw new Error("Failed to get system settings configuration");
+//   }
+// }
 
-function getSetting(key, defaultValue = null) {
-  const settings = cache.get("settings:all");
-  if (!settings || !(key in settings)) {
-    return defaultValue;
-  }
-  return settings[key];
-}
+// function getSetting(key, defaultValue = null) {
+//   const settings = cache.get("settings:all");
+//   if (!settings || !(key in settings)) {
+//     return defaultValue;
+//   }
+//   return settings[key];
+// }
 
 module.exports = SettingsManager;

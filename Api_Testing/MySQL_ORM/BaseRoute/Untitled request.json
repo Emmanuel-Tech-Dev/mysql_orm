@@ -1,0 +1,20 @@
+{
+  "name": "Untitled request",
+  "request": {
+    "type": "http",
+    "url": "{{BASE_URL}}/",
+    "scripts": {
+      "preRequest": "",
+      "postResponse": ""
+    },
+    "method": "GET",
+    "queryParams": [],
+    "headers": [],
+    "contentType": "text/plain",
+    "auth": {
+      "currentAuthType": "INHERIT",
+      "authConfigStore": {}
+    },
+    "pathVariables": []
+  }
+}

@@ -14,19 +14,22 @@ const fs = require("fs");
 const path = require("path");
 const conn = require("./core/config/conn");
 const Model = require("./core/model/model");
-const validateTable = require("./core/middleware/validateTable");
 const AppError = require("./shared/helpers/AppError");
 const logger = require("./shared/helpers/logger");
 const BaseRoute = require("./route/baseRoute");
 const uploadServices = require("./core/lib/uploadServices");
 const { uploadSingle } = require("./core/config/multer");
 const authMiddleWare = require("./core/middleware/authMiddleWare");
-const systemSettings = require("./core/lib/systemSettings");
 const SettingsManager = require("./core/lib/systemSettings");
 const errorHandler = require("./core/middleware/errorHandler");
+const AuthService = require("./core/lib/authService");
+const utils = require("./shared/utils/functions");
+const AuthRoute = require("./route/authRoute");
+const authorization = require("./core/middleware/authorization");
 
 const app = express();
 const server = http.createServer(app);
+const settings = new SettingsManager();
 // const server = http.createServer(app);
 
 const PORT = process.env.PORT || 3000;
@@ -123,12 +126,21 @@ app.use((req, res, next) => {
   next();
 });
 
+new AuthRoute(app);
 //app.use(authMiddleWare);
-
+//app.use(authorization);
 new BaseRoute(app);
 
-app.get("/", async (req, res) => {
+app.get("/api/", async (req, res) => {
   try {
+    const set = new AuthService();
+    const reg = utils.genRegNumber();
+    await set.generateAuthTokens({
+      id: 1234,
+      reg_number: reg,
+      email: "test@gmail.ocm",
+    });
+    //return;
     const [results] = await conn.query("SELECT 1 + 1 AS solution");
     console.log("The solution is: ", results[0].solution);
     res.send(`The solution is: ${results[0].solution}`);
@@ -191,6 +203,20 @@ app.get("/api/v1/cache", async (req, res) => {
   }
 });
 
+app.post("/auth/create_user", async (req, res) => {
+  const record = req.body;
+
+  const auth = new AuthService();
+
+  await auth.createAdminUser(record);
+
+  res.status(201).json({
+    status: "ok",
+    message: "Operation Successfull!",
+    detalis: "User created successfully",
+  });
+});
+
 app.all("*", (req, res, next) => {
   next(
     new AppError("ERR_ENDPOINT_NOT_FOUND", `Route ${req.originalUrl} not found`)
@@ -199,9 +225,8 @@ app.all("*", (req, res, next) => {
 
 app.use(errorHandler(logger));
 
-// ==========================================
 // GRACEFUL SHUTDOWN
-// ==========================================
+
 process.on("SIGTERM", async () => {
   console.log("SIGTERM signal received: closing HTTP server");
   await logger.close();
@@ -216,7 +241,6 @@ process.on("SIGINT", async () => {
 
 async function startServer() {
   try {
-    const settings = new SettingsManager();
     await settings.preloadAll();
 
     app.locals.settings = settings;

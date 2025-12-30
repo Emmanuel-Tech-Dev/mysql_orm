@@ -2,14 +2,15 @@
   "name": "Post Upload",
   "request": {
     "type": "http",
-    "url": "{{BASE_URL}}/v1/cache",
+    "url": "http://localhost:3000/auth/create_user",
     "scripts": {
       "preRequest": "",
       "postResponse": ""
     },
-    "method": "GET",
+    "method": "POST",
     "queryParams": [],
     "headers": [],
+    "body": "  {\n     \"email\" : \"root@gmail.com\",\n     \"password\" : \"12345\",\n     \"name\" : \"Root User\"\n    forced_password_change: 1,\n  }",
     "bodyContainer": {
       "text": "",
       "form": [],
@@ -52,7 +53,7 @@
         }
       ]
     },
-    "contentType": "text/plain",
+    "contentType": "application/json",
     "auth": {
       "currentAuthType": "INHERIT",
       "authConfigStore": {}

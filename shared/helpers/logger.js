@@ -3,6 +3,7 @@ const path = require("path");
 require("winston-daily-rotate-file");
 const fs = require("fs");
 const ERROR_CODES = require("./erroCodes");
+const utils = require("../utils/functions");
 
 // Environment configuration with validation
 const ENV = process.env.NODE_ENV || "development";
@@ -19,6 +20,11 @@ const LOG_TYPES = Object.freeze({
   security: {
     file: "security-%DATE%.log",
     level: "warn",
+    category: "security",
+  },
+  critical: {
+    file: "critical-%DATE%.log",
+    level: "critical",
     category: "security",
   },
   performance: {
@@ -199,18 +205,18 @@ class LoggerService {
     return { code: matches[0][0], ...matches[0][1] };
   }
 
-  smartError(error, context = {}) {
+  smartError(error, context = {}, level) {
     const status = error.status || error.statusCode || context.status || 500;
-    const hint = error.code || context.hint;
-
+    const hint = error.errorCode || context.hint;
     const errorInfo = this._findErrorCodeByStatus(status, hint);
-
+    const filteredContext = utils.removePasswordFromObject(context?.body);
     const metadata = {
-      errorCode: errorInfo?.code || "UNKNOWN",
-      status: errorInfo?.status || status,
+      errorCode: error?.errorCode || "UNKNOWN",
+      status: error?.status || status,
+      statusCode: error.statusCode,
       errorMessage: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined,
-      ...context,
+      ...filteredContext,
     };
 
     // Remove hint from metadata to avoid clutter
@@ -222,7 +228,9 @@ class LoggerService {
       ? error.message
       : error;
 
-    this.log("error", logMessage, metadata);
+    const errLevel = level || "error";
+
+    this.log(errLevel, logMessage, metadata);
   }
 
   access(message, meta = {}) {
@@ -247,6 +255,9 @@ class LoggerService {
 
   security(message, meta = {}) {
     this.log("security", message, meta);
+  }
+  critical(message, meta = {}) {
+    this.log("critical", message, meta);
   }
 
   performance(message, meta = {}) {

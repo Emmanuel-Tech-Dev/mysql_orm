@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const NodeCache = require("node-cache");
 const { v4: uuidv4 } = require("uuid");
 const otp = require("otp");
+const { customAlphabet } = require("nanoid");
 
 const ENCRYPTION_KEY = Buffer.from(
   process.env.ENCRYPTION_KEY,
@@ -300,6 +301,21 @@ const utils = {
     if (mimetype.startsWith("image/")) return "image";
     if (mimetype.startsWith("video/")) return "video";
     return "unknown";
+  },
+
+  genRegNumber(prefix = "REG") {
+    const generateRandomDigits = customAlphabet("0123456789", 6);
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    const random = generateRandomDigits(); // 6 random digits
+
+    return `${prefix}${year}${month}${day}${random}`;
+  },
+  hashToken(token) {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    return tokenHash;
   },
 };
 module.exports = utils;

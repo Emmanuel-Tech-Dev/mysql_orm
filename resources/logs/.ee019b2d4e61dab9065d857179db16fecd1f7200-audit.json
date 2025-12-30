@@ -6,14 +6,9 @@
     "auditLog": "F:\\Next JS Projects\\mysql_orm\\resources\\logs\\.ee019b2d4e61dab9065d857179db16fecd1f7200-audit.json",
     "files": [
         {
-            "date": 1766182776555,
-            "name": "F:\\Next JS Projects\\mysql_orm\\resources\\logs\\error-2025-12-19.log",
-            "hash": "51d69392b411a6065f9525e8fc9607054b868c36765a09eaa5a4f6f9cc9f6c79"
-        },
-        {
-            "date": 1766223625704,
-            "name": "F:\\Next JS Projects\\mysql_orm\\resources\\logs\\error-2025-12-20.log",
-            "hash": "b065354626c70e4ff7591fbc2112983d63634fb7f2c9fb84d776d5f024b4c352"
+            "date": 1767094188460,
+            "name": "F:\\Next JS Projects\\mysql_orm\\resources\\logs\\error-2025-12-30.log",
+            "hash": "d27e0f2083dd94c5efef115a8883028764c73bf5b9392ae3826678aa47db59e8"
         }
     ],
     "hashType": "sha256"
