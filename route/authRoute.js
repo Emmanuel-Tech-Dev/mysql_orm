@@ -88,7 +88,7 @@ class AuthRoute {
           message: "Operation Successfull!",
           detalis: "User created successfully",
         });
-      }
+      },
     );
   }
 

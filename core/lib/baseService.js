@@ -22,6 +22,7 @@ class BaseService {
     const { resources } = this.request.params;
 
     const { paginate } = options;
+    console.log(options);
 
     const res = await new Model()
       .select(["*"], resources)

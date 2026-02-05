@@ -47,7 +47,7 @@ class Model extends QueryBuilder {
       filterable = [],
       sortable = [],
       maxLimit = 100,
-      defaultLimit = 10,
+      defaultLimit = 20,
       fullTextSearch = null, // { enabled: true, columns: ['title', 'content'], table: 'articles' }
     } = options;
 

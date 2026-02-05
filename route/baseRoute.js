@@ -1,21 +1,25 @@
 const validateTable = require("../core/middleware/validateTable");
 const BaseService = require("../core/lib/baseService");
-const loggerService = require("../shared/helpers/logger");
-const { response } = require("express");
 const AppError = require("../shared/helpers/AppError");
 const authMiddleWare = require("../core/middleware/authMiddleWare");
 const authorization = require("../core/middleware/authorization");
+const { uploadSingle } = require("../core/config/multer");
+const { uploadSingleFile } = require("../core/lib/uploadServices");
+const uploadServices = require("../core/lib/uploadServices");
+const utils = require("../shared/utils/functions");
 
 class BaseRoute {
   constructor(app) {
     this.app = app;
 
-    this.init(app);
+    // this.init(app);
 
     this.findAll(app);
     this.findWithParams(app);
     this.findOne(app);
     this.create(app);
+    this.createWithFile(app);
+    this.uploadBulkFiles(app);
     this.bulkCreate(app);
     this.update(app);
     this.updateSome(app);
@@ -112,6 +116,78 @@ class BaseRoute {
         details: "Resource created successfully",
       });
     });
+  }
+
+  createWithFile(app) {
+    app.post(
+      "/api/:resources/file",
+      validateTable,
+      uploadSingle.single("file"),
+      async (req, res) => {
+        const service = new BaseService(req, res);
+        const table = req.params.resources;
+        const file = req.file;
+        const body = req.body;
+
+        const convertBody = JSON.parse(body.body);
+
+        // console.log(convertBody);
+        // return;
+
+        if (!file) {
+          throw new AppError("ERR_BAD_REQUEST", null, {
+            message: "No file uploaded",
+            level: "access",
+          });
+        }
+
+        const results = await uploadServices.uploadSingleFile(
+          file,
+          "User Profile Testing",
+        );
+
+        const dataWithFile = {
+          ...convertBody,
+          custom_id: utils.genRegNumber("REG"),
+          avatar: results?.url,
+          //file_type: data.resource_type,
+          // file_storage_id: data.public_id,
+        };
+
+        if (!results) throw new AppError("ERR_FILE_UPLOAD_FAILED");
+        await service.create(dataWithFile);
+
+        res.status(201).json({
+          status: "ok",
+          message: "Operation Successfull!",
+          details: "Resource updated successfully",
+        });
+      },
+    );
+  }
+
+  uploadBulkFiles(app) {
+    app.post(
+      "/api/:resources/upload_bulk",
+      validateTable,
+      uploadSingle.array("files", 5),
+      async (req, res) => {
+        const service = new BaseService(req, res);
+        const files = req.files;
+        const results = await uploadServices.uploadMultipleFiles(
+          files,
+          "Testing",
+        );
+
+        await service.bulkCreate(results);
+
+        res.status(201).json({
+          status: "ok",
+          message: "Operation Successfull!",
+          details: "Resource updated successfully",
+        });
+      },
+    );
   }
 
   update(app) {

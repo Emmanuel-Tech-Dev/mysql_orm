@@ -2,8 +2,6 @@ const CacheManager = require("../../shared/helpers/cacheManager");
 const Model = require("../model/model");
 const conn = require("../config/conn");
 
-const cache = new CacheManager();
-
 class SettingsManager {
   constructor() {
     this.cache = new CacheManager({

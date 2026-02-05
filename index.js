@@ -32,6 +32,10 @@ const server = http.createServer(app);
 const settings = new SettingsManager();
 // const server = http.createServer(app);
 
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+const specs = require("./core/config/swagger");
+
 const PORT = process.env.PORT || 3000;
 
 const limiter = rateLimiter({
@@ -85,7 +89,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     optionsSuccessStatus: 200,
-  })
+  }),
 );
 
 // app.use((req, res, next) => {
@@ -126,6 +130,8 @@ app.use((req, res, next) => {
   next();
 });
 
+// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+// console.log("swagger paths:", Object.keys(specs.paths || {}));
 new AuthRoute(app);
 //app.use(authMiddleWare);
 //app.use(authorization);
@@ -219,7 +225,10 @@ app.post("/auth/create_user", async (req, res) => {
 
 app.all("*", (req, res, next) => {
   next(
-    new AppError("ERR_ENDPOINT_NOT_FOUND", `Route ${req.originalUrl} not found`)
+    new AppError(
+      "ERR_ENDPOINT_NOT_FOUND",
+      `Route ${req.originalUrl} not found`,
+    ),
   );
 });
 
