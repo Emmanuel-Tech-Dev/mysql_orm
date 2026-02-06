@@ -36,10 +36,10 @@ class AuthService {
     this.IDPREFIX = await this.settings.get("regnumber.prefix");
     this.TOKEN_ISSUER = await this.settings.get("system.token_issuer");
     this.MAX_RESET_LIMIT = await this.settings.get(
-      "auth.forget.password.limit"
+      "auth.forget.password.limit",
     );
     this.LOCKOUT_DURATION_MINUTES = await this.settings.get(
-      "auth.lockout_duration_minutes"
+      "auth.lockout_duration_minutes",
     );
   }
   async tokenIssuerInit() {
@@ -57,7 +57,7 @@ class AuthService {
         // jti: jti, // This sets the 'jti' claim in JWT standard claims
         issuer: this.TOKEN_ISSUER, // Optional: set issuer
         // audience: "your-users", // Optional: set audience
-      }
+      },
     );
   }
 
@@ -99,7 +99,7 @@ class AuthService {
         type: "access",
       },
       this.accessTokenSecret,
-      accessttl
+      accessttl,
     );
 
     const refreshToken = this._generateToken(
@@ -109,7 +109,7 @@ class AuthService {
         type: "refresh",
       },
       this.refreshTokenSecret,
-      refreshttl
+      refreshttl,
     );
 
     return {
@@ -257,7 +257,7 @@ class AuthService {
 
     const lockoutEnd = new Date(user?.last_reset_attempt);
     lockoutEnd.setMinutes(
-      lockoutEnd.getMinutes() + this.LOCKOUT_DURATION_MINUTES
+      lockoutEnd.getMinutes() + this.LOCKOUT_DURATION_MINUTES,
     );
 
     return new Date() < lockoutEnd;
@@ -275,7 +275,7 @@ class AuthService {
 
     const lockoutEnd = new Date(user?.last_reset_attempt);
     lockoutEnd.setMinutes(
-      lockoutEnd.getMinutes() + this.LOCKOUT_DURATION_MINUTES
+      lockoutEnd.getMinutes() + this.LOCKOUT_DURATION_MINUTES,
     );
 
     const remainingMs = lockoutEnd - new Date();
@@ -305,7 +305,7 @@ class AuthService {
         "INNER",
         "admin_credentials",
         "admin.custom_id",
-        "admin_credentials.admin_custom_id"
+        "admin_credentials.admin_custom_id",
       )
       .where("admin.email", "=", email)
       .execute();
@@ -319,7 +319,7 @@ class AuthService {
 
     const isPasswordValid = await this.comparePassword(
       password,
-      user?.password
+      user?.password,
     );
 
     if (!isPasswordValid) {
@@ -418,6 +418,7 @@ class AuthService {
 
   async refreshToken(token) {
     const decoded = await this.verifyToken(token, this.refreshTokenSecret);
+    console.log(decoded);
 
     if (!decoded || decoded.type !== "refresh") {
       throw new AppError("ERR_INVALID_TOKEN");
@@ -471,14 +472,14 @@ class AuthService {
         {
           message: "Failed to change password , Try again later",
           level: "security",
-        }
+        },
       );
     }
 
     const [user] = await this.model
       .select(
         ["admin_custom_id", "password", "token_version"],
-        "admin_credentials"
+        "admin_credentials",
       )
       .where("admin_custom_id", "=", sub)
       .execute();
@@ -492,7 +493,7 @@ class AuthService {
 
     const isPasswordValid = await this.comparePassword(
       oldPassword,
-      user?.password
+      user?.password,
     );
 
     if (!isPasswordValid) {
@@ -502,7 +503,7 @@ class AuthService {
         {
           message: "Failed to change password , Try again later",
           level: "security",
-        }
+        },
       );
     }
 
@@ -564,7 +565,7 @@ class AuthService {
     const isLocked = await this.isResetLockedOut(userExist?.custom_id);
     if (isLocked) {
       const remainingTime = await this.getRemainingLockoutTime(
-        userExist?.custom_id
+        userExist?.custom_id,
       );
 
       throw new AppError(
@@ -573,7 +574,7 @@ class AuthService {
         {
           message: `Account temporarily locked. Try again in ${remainingTime} minutes.`,
           level: "security",
-        }
+        },
       );
     }
 
@@ -628,7 +629,7 @@ class AuthService {
     const [user] = await this.model
       .select(
         ["admin_custom_id", "reset_token_expiry", "reset_token_used"],
-        "admin_credentials"
+        "admin_credentials",
       )
       .where("reset_token", "=", resetToken)
       .execute();
@@ -669,7 +670,7 @@ class AuthService {
           "reset_token_used",
           "token_version",
         ],
-        "admin_credentials"
+        "admin_credentials",
       )
       .where("reset_token", "=", hashedToken)
       .execute();
@@ -681,7 +682,7 @@ class AuthService {
         {
           message: "Failed to reset password, Try again",
           level: "security",
-        }
+        },
       );
     }
 
@@ -692,7 +693,7 @@ class AuthService {
         {
           message: "Failed to reset password, Try again",
           level: "security",
-        }
+        },
       );
     }
 

@@ -36,6 +36,11 @@ class BaseRoute {
   findAll(app) {
     app.get("/api/:resources", validateTable, async (req, res) => {
       const service = new BaseService(req, res);
+      const name = utils.genInstituitionCode(
+        "Kwame Nkrumah University of Science and Technology",
+        "Kumasi",
+      );
+      console.log(name);
       const data = await service.findAll();
       res.status(200).json({
         status: "ok",

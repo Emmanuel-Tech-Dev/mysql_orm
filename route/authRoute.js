@@ -96,14 +96,6 @@ class AuthRoute {
     app.post("/auth/refresh", async (req, res) => {
       const token = req.cookies.refresh_token;
       const response = await this.auth.refreshToken(token);
-
-      // res.cookie("refresh_token", response?.refreshToken, {
-      //   httpOnly: true,
-      //   secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-      //   sameSite: "strict", // Strict CSRF protection
-      //   maxAge: this.refreshttl, // 7 days
-      // });
-
       res
         .status(200)
         .cookie("refresh_token", response?.refreshToken, {

@@ -10,7 +10,7 @@ const { customAlphabet } = require("nanoid");
 
 const ENCRYPTION_KEY = Buffer.from(
   process.env.ENCRYPTION_KEY,
-  process.env.KEY_HOOK
+  process.env.KEY_HOOK,
 ); // Must be 32 bytes
 const IV_LENGTH = 16;
 
@@ -30,7 +30,7 @@ const utils = {
     const decipher = crypto.createDecipheriv(
       "aes-256-cbc",
       ENCRYPTION_KEY,
-      Buffer.from(iv, "hex")
+      Buffer.from(iv, "hex"),
     );
     let decrypted = decipher.update(encrypted, "hex", "utf8");
     decrypted += decipher.final("utf8");
@@ -159,7 +159,7 @@ const utils = {
         // jti: jti, // This sets the 'jti' claim in JWT standard claims
         issuer: "your-issuer", // Optional: set issuer
         // audience: "your-users", // Optional: set audience
-      }
+      },
     );
   },
 
@@ -182,7 +182,7 @@ const utils = {
         type: "access", // Optional: identify token type
       },
       process.env.JWT_SECRET,
-      "15m"
+      "15m",
     );
 
     // Create refresh token with its own JTI
@@ -193,7 +193,7 @@ const utils = {
         type: "refresh", // Optional: identify token type
       },
       process.env.REFRESH_TOKEN_SECRET,
-      "7d"
+      "7d",
     );
 
     return {
@@ -215,12 +215,12 @@ const utils = {
       accessToken: Utilities.generateToken(
         payload,
         process.env.JWT_SECRET,
-        "15m"
+        "15m",
       ),
       refreshToken: Utilities.generateToken(
         payload,
         process.env.REFRESH_TOKEN_SECRET,
-        "7d"
+        "7d",
       ),
     };
   },
@@ -316,6 +316,23 @@ const utils = {
   hashToken(token) {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     return tokenHash;
+  },
+
+  genInstituitionCode(name, region) {
+    // if university of Ghana || Kwame Nkrumah University of Science and Technology || Akenten Appiah Menkah University of Science and Technoloogy
+
+    const stopWords = ["OF", "AND", "THE", "FOR", "IN", "AT", "TO"];
+
+    const code = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9 ]/g, "") // Clean special chars
+      .split(/\s+/) // Split by any whitespace
+      .filter((word) => word && !stopWords.includes(word)) // Remove "OF", "AND", etc.
+      .map((word) => word[0]) // Take first letter of remaining words
+      .join("")
+      .slice(0, 10); // Limit length (e.g., KNUST)
+
+    return `${code}-${region}`;
   },
 };
 module.exports = utils;
